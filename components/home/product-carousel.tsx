@@ -146,6 +146,16 @@ function BestSellerCard({
         />
         <button
           onClick={(e) => {
+            // Wishlist stub — no persistence yet.
+            e.stopPropagation();
+          }}
+          className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
+          aria-label={`Add ${product.name} to wishlist`}
+        >
+          <Icon name="favorite" className="text-[20px]" />
+        </button>
+        <button
+          onClick={(e) => {
             // Add-to-cart is a stub for now — no cart persistence yet.
             e.stopPropagation();
           }}
@@ -195,6 +205,26 @@ function ArrivalCard({
           sizes="220px"
           className="object-cover transition-transform duration-700 group-hover:scale-105"
         />
+        <button
+          onClick={(e) => {
+            // Wishlist stub — no persistence yet.
+            e.stopPropagation();
+          }}
+          className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
+          aria-label={`Add ${product.name} to wishlist`}
+        >
+          <Icon name="favorite" className="text-[20px]" />
+        </button>
+        <button
+          onClick={(e) => {
+            // Add-to-cart is a stub for now — no cart persistence yet.
+            e.stopPropagation();
+          }}
+          className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary shadow-[4px_4px_0px_#864d61] hover:translate-y-[-2px] transition-all z-10"
+          aria-label={`Add ${product.name} to cart`}
+        >
+          <Icon name="add_shopping_cart" className="text-[20px]" />
+        </button>
       </div>
       <h4 className="font-headline-md text-[14px] text-on-surface ml-2">
         {product.name}

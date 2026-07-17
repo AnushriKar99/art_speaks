@@ -7,9 +7,9 @@ const LOGO_SRC =
 
 export function SiteFooter() {
   return (
-    <footer className="bg-white w-full py-16 px-margin-mobile border-t-8 border-candy-pink/10 relative overflow-hidden">
+    <footer className="bg-white w-full py-8 px-margin-mobile border-t-8 border-candy-pink/10 relative overflow-hidden">
       <div className="absolute inset-0 checkered-pattern opacity-10 pointer-events-none" />
-      <div className="max-w-6xl mx-auto flex flex-col items-center gap-10 text-center relative z-10">
+      <div className="max-w-6xl mx-auto flex flex-col items-center gap-4 text-center relative z-10">
         <div className="flex items-center gap-3">
           <Image
             alt="_a_r_t_speaks logo"
@@ -27,6 +27,7 @@ export function SiteFooter() {
           tells a story.
         </p>
         <div className="flex flex-wrap justify-center gap-8">
+          {/* TODO: real links pending — placeholder hrefs for now. */}
           <Link
             className="text-primary font-black hover:text-candy-pink underline decoration-4 decoration-candy-pink/30 underline-offset-4 transition-all"
             href="#"
@@ -43,23 +44,17 @@ export function SiteFooter() {
             className="text-primary font-black hover:text-candy-pink underline decoration-4 decoration-lavender-dream/30 underline-offset-4 transition-all"
             href="#"
           >
-            Privacy Policy
-          </Link>
-          <Link
-            className="text-primary font-black hover:text-candy-pink underline decoration-4 decoration-lemon-yellow/30 underline-offset-4 transition-all"
-            href="#"
-          >
-            Shipping
+            WhatsApp
           </Link>
         </div>
-        <div className="w-full pt-10 border-t-2 border-candy-pink/10 flex flex-col items-center gap-6">
+        <div className="w-full pt-4 border-t-2 border-candy-pink/10 flex flex-col items-center gap-3">
           <div className="flex gap-6">
             <Icon name="payments" className="text-primary/40 text-3xl" />
             <Icon name="shopping_bag" className="text-primary/40 text-3xl" />
             <Icon name="local_shipping" className="text-primary/40 text-3xl" />
           </div>
           <div className="text-label-caps font-bold text-on-surface-variant/40 tracking-widest">
-            © 2024 _a_r_t_speaks. ALL ARTISTIC RIGHTS RESERVED.
+            © 2024 _a_r_t_speaks.
           </div>
         </div>
       </div>
