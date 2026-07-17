@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+/* ============================================================
+   _a_r_t_speaks — "Pastel Artisan" design system
+   Ported from the Google Stitch export tailwind.config into
+   Tailwind v4 @theme tokens. Utility classes generated:
+     bg-primary / text-primary / border-candy-pink / gap-gutter
+     px-margin-mobile / font-display-lg / text-headline-md ...
+   ============================================================ */
+
+@theme {
+  /* ---- Color ramp (Confectionary Spectrum) ---- */
+  --color-primary: #864d61;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #ffb7ce;
+  --color-on-primary-container: #7b4458;
+  --color-primary-fixed: #ffd9e3;
+  --color-primary-fixed-dim: #fab3ca;
+  --color-on-primary-fixed: #360b1e;
+  --color-on-primary-fixed-variant: #6a364a;
+
+  --color-secondary: #006c52;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #8ff6d0;
+  --color-on-secondary-container: #007257;
+  --color-secondary-fixed: #8ff6d0;
+  --color-secondary-fixed-dim: #73d9b5;
+  --color-on-secondary-fixed: #002117;
+  --color-on-secondary-fixed-variant: #00513d;
+
+  --color-tertiary: #5f621f;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #ced081;
+  --color-on-tertiary-container: #565917;
+  --color-tertiary-fixed: #e5e796;
+  --color-tertiary-fixed-dim: #c9cb7d;
+  --color-on-tertiary-fixed: #1c1d00;
+  --color-on-tertiary-fixed-variant: #484a07;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-background: #fff8f8;
+  --color-on-background: #22191d;
+  --color-surface: #fff8f8;
+  --color-surface-bright: #fff8f8;
+  --color-surface-dim: #e7d6dc;
+  --color-on-surface: #22191d;
+  --color-on-surface-variant: #514347;
+  --color-surface-variant: #efdee4;
+  --color-surface-tint: #864d61;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fff0f5;
+  --color-surface-container: #fbe9f0;
+  --color-surface-container-high: #f5e4ea;
+  --color-surface-container-highest: #efdee4;
+
+  --color-inverse-surface: #382e32;
+  --color-inverse-on-surface: #feecf3;
+  --color-inverse-primary: #fab3ca;
+
+  --color-outline: #837377;
+  --color-outline-variant: #d5c2c6;
+
+  --color-cream-bg: #fffdf9;
+
+  /* Accent "candy" palette */
+  --color-candy-pink: #ffb7ce;
+  --color-mint-green: #98ffd9;
+  --color-lavender-dream: #e0bbe4;
+  --color-lemon-yellow: #fdffab;
+
+  /* ---- Spacing tokens (namespaced) ---- */
+  --spacing-unit: 8px;
+  --spacing-gutter: 24px;
+  --spacing-margin-mobile: 20px;
+  --spacing-margin-desktop: 64px;
+  --spacing-container-max: 1200px;
+
+  /* ---- Fonts (bound to next/font CSS variables from layout.tsx) ---- */
+  --font-display-lg: var(--font-plus-jakarta), sans-serif;
+  --font-display-lg-mobile: var(--font-plus-jakarta), sans-serif;
+  --font-headline-md: var(--font-plus-jakarta), sans-serif;
+  --font-body-md: var(--font-be-vietnam), sans-serif;
+  --font-body-lg: var(--font-be-vietnam), sans-serif;
+  --font-label-caps: var(--font-hanken), sans-serif;
+
+  /* ---- Type scale ---- */
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 56px;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 800;
+
+  --text-display-lg-mobile: 36px;
+  --text-display-lg-mobile--line-height: 42px;
+  --text-display-lg-mobile--letter-spacing: -0.02em;
+  --text-display-lg-mobile--font-weight: 800;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 700;
+
+  /* Larger heading scale for prominent section titles (home + items page). */
+  --text-headline-lg: 30px;
+  --text-headline-lg--line-height: 38px;
+  --text-headline-lg--font-weight: 700;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
+
+  --text-label-caps: 12px;
+  --text-label-caps--line-height: 16px;
+  --text-label-caps--letter-spacing: 0.05em;
+  --text-label-caps--font-weight: 700;
+
+  /* Larger caps label for eyebrows and "view more/all" links. */
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 18px;
+  --text-label-lg--letter-spacing: 0.05em;
+  --text-label-lg--font-weight: 700;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-be-vietnam), sans-serif;
+}
+
+/* Material Symbols variable icon font (loaded via <link> in layout) */
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+.material-symbols-outlined.icon-fill {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* ============================================================
+   Kawaii utility classes (ported verbatim from Stitch exports)
+   ============================================================ */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tactile-button {
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 0 0 rgba(134, 77, 97, 0.4);
+}
+.tactile-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 rgba(134, 77, 97, 0.4);
+}
+
+.kawaii-float {
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.floating-doodle {
+  animation: doodle-float 6s ease-in-out infinite;
+}
+@keyframes doodle-float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(5deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+.squishy:active {
+  transform: scale(0.92);
+  transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Checkered background patterns */
+.checkered-pattern {
+  background-image: linear-gradient(45deg, #fbe9f0 25%, transparent 25%),
+    linear-gradient(-45deg, #fbe9f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #fbe9f0 75%),
+    linear-gradient(-45deg, transparent 75%, #fbe9f0 75%);
+  background-size: 40px 40px;
+  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+  opacity: 0.5;
+}
+.checkered-pattern-mint {
+  background-image: linear-gradient(45deg, #e0fff4 25%, transparent 25%),
+    linear-gradient(-45deg, #e0fff4 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e0fff4 75%),
+    linear-gradient(-45deg, transparent 75%, #e0fff4 75%);
+  background-size: 60px 60px;
+  background-position: 0 0, 0 30px, 30px -30px, -30px 0px;
+  opacity: 0.4;
+}
+/* Opaque full-strength checkered fill used on the shop page background */
+.checkered-bg {
+  background-image: linear-gradient(45deg, #fbe9f0 25%, transparent 25%),
+    linear-gradient(-45deg, #fbe9f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #fbe9f0 75%),
+    linear-gradient(-45deg, transparent 75%, #fbe9f0 75%);
+  background-size: 40px 40px;
+  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+}
+
+.wobbly-border {
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+}
+.wobbly-outline {
+  border: 3px solid #864d61;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+
+.kawaii-blob {
+  position: absolute;
+  z-index: -1;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.badge-sticker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: white;
+  border: 3px solid #864d61;
+  border-radius: 100px;
+  font-family: var(--font-hanken), sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: 4px 4px 0px #864d61;
+  transform: rotate(-5deg);
+  white-space: nowrap;
+}
+
+/* Custom scrollbar (product modal) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #fbe9f0;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #ffb7ce;
+  border-radius: 10px;
+}
