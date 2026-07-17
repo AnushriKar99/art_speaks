@@ -21,7 +21,7 @@ export function CategoryScroller({ categories }: { categories: Category[] }) {
           <Link
             key={category.id}
             href={`/shop?collection=${category.slug}`}
-            className="min-w-[140px] text-center group cursor-pointer"
+            className="w-[140px] shrink-0 text-center group cursor-pointer"
           >
             <div
               className="aspect-square rounded-[3rem] overflow-hidden border-4 mb-4 group-hover:translate-y-[-4px] transition-transform relative"
@@ -38,7 +38,7 @@ export function CategoryScroller({ categories }: { categories: Category[] }) {
                 className="object-cover"
               />
             </div>
-            <span className="text-label-caps font-label-caps text-primary group-hover:font-bold">
+            <span className="text-label-caps font-label-caps text-primary group-hover:font-bold block leading-tight">
               {category.name}
             </span>
           </Link>

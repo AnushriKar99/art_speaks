@@ -37,40 +37,27 @@ const IMG = {
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCZMpyr4Av8xYjsicArJ9MHyCDMqfTaLQ7VvMS5FRH8GiJ4viPdlf_17xwAuDunZJPqvl220jWpl9I4LDNfYAQRFLx0eZPOQUOgjGQ6Gl6Dq7ZHOgwjXmkI9QLfKN0Lu_2LF8yE4Mexol_nQY8mzT6s1wPFVCCUL3sIGX-xhZfh7_HIQ7lr84iK6tA-vjMAweXVpBIRinjBl668iUzwqchEHD2bojYfxYSVLy-VPFXNQU4LvXK_2Djajw",
 } as const;
 
+// Placeholder for category cards until real photography is added per category.
+const CATEGORY_PLACEHOLDER_IMAGE = IMG.categoryCharms;
+
+// One distinct pastel accent per card, from the same kawaii palette family.
 const CATEGORIES: Category[] = [
-  {
-    id: "cat-phone-charms",
-    name: "Phone Charms",
-    slug: "phone-charms",
-    accentColor: "#FFB7CE",
-    shadowColor: "#ffb7ce",
-    image: IMG.categoryCharms,
-  },
-  {
-    id: "cat-worry-stones",
-    name: "Worry Stones",
-    slug: "worry-stones",
-    accentColor: "#E0BBE4",
-    shadowColor: "#E0BBE4",
-    image: IMG.categoryWorryStones,
-  },
-  {
-    id: "cat-bookmarks",
-    name: "Bookmarks",
-    slug: "bookmarks",
-    accentColor: "#98FFD9",
-    shadowColor: "#98FFD9",
-    image: IMG.midnightBookmark,
-  },
-  {
-    id: "cat-stationery",
-    name: "Stationery",
-    slug: "stationery",
-    accentColor: "#FDFFAB",
-    shadowColor: "#FDFFAB",
-    image: IMG.botanicalStickers,
-  },
-];
+  { name: "Phone Charms", slug: "phone-charms", accent: "#FFB7CE" },
+  { name: "Keychains/Worry Stones", slug: "keychains-worry-stones", accent: "#E0BBE4" },
+  { name: "Bookmarks", slug: "bookmarks", accent: "#98FFD9" },
+  { name: "Paintings", slug: "paintings", accent: "#FDFFAB" },
+  { name: "Bag Charms", slug: "bag-charms", accent: "#FFD3B0" },
+  { name: "Fridge Magnets", slug: "fridge-magnets", accent: "#AEE2FF" },
+  { name: "Tote Bags", slug: "tote-bags", accent: "#C7CEEA" },
+  { name: "Stickers", slug: "stickers", accent: "#FFAAA7" },
+].map(({ name, slug, accent }) => ({
+  id: `cat-${slug}`,
+  name,
+  slug,
+  accentColor: accent,
+  shadowColor: accent,
+  image: CATEGORY_PLACEHOLDER_IMAGE,
+}));
 
 const DESCRIPTION =
   "Each piece is crafted with intention and a sprinkle of studio magic. Small, beautiful objects have the power to turn your daily ritual into a moment of pure creativity.";
@@ -117,7 +104,7 @@ const PRODUCTS: Product[] = [
     artisanNote: ARTISAN_NOTE,
     stockCount: 8,
     images: [IMG.oceanWorryStone],
-    categorySlug: "worry-stones",
+    categorySlug: "keychains-worry-stones",
     isBestSeller: true,
     isNewArrival: false,
   },
@@ -131,7 +118,7 @@ const PRODUCTS: Product[] = [
     artisanNote: ARTISAN_NOTE,
     stockCount: 15,
     images: [IMG.minimalistTote],
-    categorySlug: "stationery",
+    categorySlug: "tote-bags",
     isBestSeller: false,
     isNewArrival: true,
   },
@@ -145,7 +132,7 @@ const PRODUCTS: Product[] = [
     artisanNote: ARTISAN_NOTE,
     stockCount: 6,
     images: [IMG.monsteraDish],
-    categorySlug: "worry-stones",
+    categorySlug: "keychains-worry-stones",
     isBestSeller: false,
     isNewArrival: true,
   },
@@ -159,7 +146,7 @@ const PRODUCTS: Product[] = [
     artisanNote: ARTISAN_NOTE,
     stockCount: 40,
     images: [IMG.botanicalStickers],
-    categorySlug: "stationery",
+    categorySlug: "stickers",
     isBestSeller: false,
     isNewArrival: true,
   },
@@ -173,7 +160,7 @@ const PRODUCTS: Product[] = [
     artisanNote: ARTISAN_NOTE,
     stockCount: 5,
     images: [IMG.worryStoneSet],
-    categorySlug: "worry-stones",
+    categorySlug: "keychains-worry-stones",
     isBestSeller: false,
     isNewArrival: false,
   },
@@ -187,7 +174,7 @@ const PRODUCTS: Product[] = [
     artisanNote: ARTISAN_NOTE,
     stockCount: 9,
     images: [IMG.minimalistTote],
-    categorySlug: "stationery",
+    categorySlug: "tote-bags",
     isBestSeller: false,
     isNewArrival: false,
   },
@@ -201,7 +188,7 @@ const PRODUCTS: Product[] = [
     artisanNote: ARTISAN_NOTE,
     stockCount: 30,
     images: [IMG.dreamyStickers],
-    categorySlug: "stationery",
+    categorySlug: "stickers",
     isBestSeller: false,
     isNewArrival: false,
   },

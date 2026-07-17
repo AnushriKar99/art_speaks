@@ -11,11 +11,6 @@ export function Hero() {
           handcrafted with love, intended to bring a whisper of whimsy to your
           everyday life.
         </p>
-        <div className="flex justify-center gap-4">
-          <button className="bg-white text-primary border-2 border-primary/20 px-8 py-4 rounded-full font-label-caps text-label-caps hover:bg-surface-container-high transition-colors">
-            Artist&apos;s Note
-          </button>
-        </div>
       </div>
     </section>
   );
