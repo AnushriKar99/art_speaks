@@ -26,7 +26,7 @@ There is no test suite yet.
 - **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript**
 - **Tailwind CSS v4** — configured entirely in `app/globals.css` via `@theme`
   tokens (there is **no** `tailwind.config.js`). PostCSS plugin `@tailwindcss/postcss`.
-- `next/font/google` self-hosts Plus Jakarta Sans, Be Vietnam Pro, Hanken Grotesk.
+- `next/font/google` self-hosts Fredoka (display/headline), Be Vietnam Pro (body), Hanken Grotesk (labels).
 - Material Symbols Outlined is loaded via a plain `<link>` in `app/layout.tsx`
   (variable icon-font axes don't play well with `next/font`).
 

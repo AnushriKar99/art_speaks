@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Be_Vietnam_Pro, Hanken_Grotesk } from "next/font/google";
+import { Fredoka, Be_Vietnam_Pro, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakarta.variable} ${beVietnam.variable} ${hanken.variable}`}
+      className={`${fredoka.variable} ${beVietnam.variable} ${hanken.variable}`}
     >
       <head>
         {/* Material Symbols is a variable icon font; next/font doesn't handle its

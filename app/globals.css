@@ -80,9 +80,9 @@
   --spacing-container-max: 1200px;
 
   /* ---- Fonts (bound to next/font CSS variables from layout.tsx) ---- */
-  --font-display-lg: var(--font-plus-jakarta), sans-serif;
-  --font-display-lg-mobile: var(--font-plus-jakarta), sans-serif;
-  --font-headline-md: var(--font-plus-jakarta), sans-serif;
+  --font-display-lg: var(--font-fredoka), sans-serif;
+  --font-display-lg-mobile: var(--font-fredoka), sans-serif;
+  --font-headline-md: var(--font-fredoka), sans-serif;
   --font-body-md: var(--font-be-vietnam), sans-serif;
   --font-body-lg: var(--font-be-vietnam), sans-serif;
   --font-label-caps: var(--font-hanken), sans-serif;
