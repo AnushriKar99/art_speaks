@@ -236,6 +236,16 @@ body {
   background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
 }
 
+/* Polka-dot "classic" background used on the cart page */
+.dotted-bg {
+  background-image: radial-gradient(#efdee4 1px, transparent 0);
+  background-size: 40px 40px;
+}
+
+.candy-shadow {
+  box-shadow: 0 4px 15px rgba(255, 183, 206, 0.4);
+}
+
 .wobbly-border {
   border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
 }

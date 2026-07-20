@@ -43,7 +43,8 @@ export function ShopHeader() {
           >
             <Icon name="search" />
           </button>
-          <button
+          <Link
+            href="/cart"
             className="text-primary hover:scale-105 transition-transform duration-200 active:scale-95 relative"
             aria-label="Cart"
           >
@@ -51,7 +52,7 @@ export function ShopHeader() {
             <span className="absolute -top-1 -right-1 bg-candy-pink text-[10px] w-4 h-4 flex items-center justify-center rounded-full text-on-primary-container font-bold">
               2
             </span>
-          </button>
+          </Link>
         </div>
       </div>
 

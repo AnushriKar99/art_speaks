@@ -53,7 +53,8 @@ export function SiteHeader() {
           >
             <Icon name="favorite" />
           </Link>
-          <button
+          <Link
+            href="/cart"
             className="text-primary hover:scale-105 transition-transform duration-200 relative"
             aria-label="Cart"
           >
@@ -61,7 +62,7 @@ export function SiteHeader() {
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-candy-pink text-on-primary-container text-[10px] flex items-center justify-center rounded-full font-bold">
               2
             </span>
-          </button>
+          </Link>
           <button
             className="text-primary hover:scale-105 transition-transform duration-200"
             aria-label="Account"
