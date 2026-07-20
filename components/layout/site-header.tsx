@@ -4,20 +4,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
+import { DesktopNav, MobileNav } from "@/components/layout/header-nav";
+import type { Category } from "@/lib/types";
 
 const LOGO_SRC =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCTyXoVuqkhtjFdw_3_hIVL_LtHaCvoy8wblFrWSVqK-n_C0rk4zIwcUNM5bZEnuAUTCXRq3T2wjrSD5CnoxIAvUePVmCLxv9rRSPr3aSXU9YvJPOPlyajwH1CUOKgs1y1-B-iZp0tED4UVsuEapkAAODGGzb_kE1Bv_9HQ_GuGpJgIJbEhGcjJze4r4gEyOB_-mWS1G0DFHBFw-nO0i8sRopGKZKE-t7DpOYHhbShTlxGQLBuLqotrNcAYs7YaWQXUdcA";
 
-const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Shop All", href: "/shop" },
-  { label: "Phone Charms", href: "/shop?collection=phone-charms" },
-  { label: "Worry Stones", href: "/shop?collection=worry-stones" },
-  { label: "Bookmarks", href: "/shop?collection=bookmarks" },
-  { label: "Stationery", href: "/shop?collection=stationery" },
-];
-
-export function SiteHeader() {
+export function SiteHeader({ categories }: { categories: Category[] }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -46,17 +39,7 @@ export function SiteHeader() {
               </h1>
             </Link>
           </div>
-          <nav className="hidden lg:flex items-center gap-8">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-primary font-label-caps text-label-caps uppercase tracking-wider hover:text-candy-pink transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          <DesktopNav categories={categories} />
           <div className="flex items-center gap-4">
             <Link
               href="/shop?collection=wishlist"
@@ -101,16 +84,7 @@ export function SiteHeader() {
         }`}
         aria-hidden={!menuOpen}
       >
-        {NAV_LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            onClick={() => setMenuOpen(false)}
-            className="py-3 px-4 rounded-2xl text-primary font-label-caps text-label-caps uppercase tracking-wider hover:bg-surface-container-high transition-colors"
-          >
-            {link.label}
-          </Link>
-        ))}
+        <MobileNav categories={categories} onNavigate={() => setMenuOpen(false)} />
       </nav>
     </>
   );

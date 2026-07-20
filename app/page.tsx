@@ -23,7 +23,7 @@ export default async function Home() {
   return (
     <>
       <DecorativeBlobs />
-      <SiteHeader />
+      <SiteHeader categories={categories} />
       <main className="pt-20 pb-16 relative">
         <Hero />
 

@@ -4,6 +4,7 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { CartView } from "@/components/cart/cart-view";
 import { Icon } from "@/components/ui/icon";
 import { getCartItems } from "@/lib/data/cart";
+import { getCategories } from "@/lib/data/products";
 
 export const metadata: Metadata = {
   title: "Art Speaks | Your Basket",
@@ -11,11 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function CartPage() {
-  const items = await getCartItems();
+  const [items, categories] = await Promise.all([getCartItems(), getCategories()]);
 
   return (
     <>
-      <ShopHeader />
+      <ShopHeader categories={categories} />
       <main className="min-h-screen dotted-bg pb-32 relative">
         {/* Floating doodles */}
         <div

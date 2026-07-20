@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { ShopHeader } from "@/components/layout/shop-header";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ProductGrid } from "@/components/product/product-grid";
-import { CategoryFilter } from "@/components/product/category-filter";
 import { Icon } from "@/components/ui/icon";
 import { getCategories, getCollection } from "@/lib/data/products";
 
@@ -33,11 +32,11 @@ export default async function ShopPage({
     getCollection(collectionSlug),
   ]);
 
-  const { title: heading, eyebrow, products, categorySlug } = view;
+  const { title: heading, eyebrow, products } = view;
 
   return (
     <>
-      <ShopHeader />
+      <ShopHeader categories={categories} />
       <main className="min-h-screen checkered-bg pb-32 relative">
         {/* Floating doodles */}
         <div
@@ -68,10 +67,6 @@ export default async function ShopPage({
               {heading}
             </h2>
           </div>
-
-          <CategoryFilter categories={categories} activeSlug={categorySlug} />
-          {/* activeSlug is set only for category collections, so best-sellers /
-              new-arrivals / wishlist leave every chip unhighlighted. */}
 
           {products.length > 0 ? (
             <ProductGrid products={products} />
