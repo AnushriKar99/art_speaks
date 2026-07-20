@@ -35,7 +35,7 @@ export function ShopHeader() {
           className="font-headline-md text-headline-md font-bold text-primary tracking-tight"
           href="/"
         >
-          _a_r_t_speaks
+          art_speaks
         </Link>
         <div className="flex gap-4 items-center">
           <button

@@ -34,14 +34,14 @@ export function SiteHeader() {
           </button>
           <Link href="/" className="flex items-center gap-2">
             <Image
-              alt="_a_r_t_speaks logo"
+              alt="art_speaks logo"
               className="w-9 h-9 rounded-full object-cover border-2 border-candy-pink"
               src={LOGO_SRC}
               width={36}
               height={36}
             />
             <h1 className="font-display-lg text-headline-md italic text-primary tracking-tight">
-              _a_r_t_speaks
+              art_speaks
             </h1>
           </Link>
         </div>

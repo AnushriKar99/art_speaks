@@ -24,7 +24,7 @@ const hanken = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "_a_r_t_speaks | Handcrafted Artistic Curations",
+  title: "art_speaks | Handcrafted Artistic Curations",
   description:
     "A handcrafted art studio. Small items, big feelings — phone charms, worry stones, bookmarks and custom pieces made with love.",
 };
