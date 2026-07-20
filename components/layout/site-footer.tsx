@@ -27,16 +27,17 @@ export function SiteFooter() {
           tells a story.
         </p>
         <div className="flex items-center justify-center gap-4">
-          {/* TODO: real links pending — placeholder hrefs for now. */}
           <Link
-            href="#"
+            href="mailto:rockndrollricky@gmail.com"
             aria-label="Email"
             className="w-11 h-11 flex items-center justify-center rounded-full bg-candy-pink/10 text-primary hover:bg-candy-pink/30 hover:scale-105 active:scale-95 transition-all duration-200"
           >
             <Icon name="mail" />
           </Link>
           <Link
-            href="#"
+            href="https://www.instagram.com/_a_r_t_speaks_?igsh=MXd2bTFwNHRoa2E2Mg=="
+            target="_blank"
+            rel="noopener noreferrer"
             aria-label="Instagram"
             className="w-11 h-11 flex items-center justify-center rounded-full bg-mint-green/10 text-primary hover:bg-mint-green/30 hover:scale-105 active:scale-95 transition-all duration-200"
           >
@@ -57,7 +58,9 @@ export function SiteFooter() {
             </svg>
           </Link>
           <Link
-            href="#"
+            href="https://wa.me/919123394109"
+            target="_blank"
+            rel="noopener noreferrer"
             aria-label="WhatsApp"
             className="w-11 h-11 flex items-center justify-center rounded-full bg-lavender-dream/10 text-primary hover:bg-lavender-dream/30 hover:scale-105 active:scale-95 transition-all duration-200"
           >
