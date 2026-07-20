@@ -25,7 +25,7 @@ export function ShopHeader() {
       <header className="bg-surface-bright border-b border-outline-variant w-full top-0 sticky shadow-sm z-50">
         <div className="flex justify-between items-center px-margin-mobile py-unit w-full max-w-container-max mx-auto h-16">
           <button
-            className="text-primary hover:scale-105 transition-transform duration-200 active:scale-95"
+            className="text-primary hover:scale-105 transition-transform duration-200 active:scale-95 lg:hidden"
             aria-label="Open menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
@@ -38,6 +38,17 @@ export function ShopHeader() {
           >
             Art Speaks
           </Link>
+          <nav className="hidden lg:flex items-center gap-8">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-primary font-label-caps text-label-caps uppercase tracking-wider hover:text-candy-pink transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
           <div className="flex gap-4 items-center">
             <button
               className="text-on-surface-variant hover:scale-105 transition-transform duration-200 active:scale-95"
@@ -78,14 +89,14 @@ export function ShopHeader() {
       {/* Left-side navigation panel (rendered outside <header> — a fixed/filtered
           ancestor would otherwise clip these fixed-position elements to its box). */}
       <div
-        className={`fixed inset-0 top-16 bg-primary/10 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 top-16 bg-primary/10 backdrop-blur-sm z-40 transition-opacity duration-300 lg:hidden ${
           menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setMenuOpen(false)}
         aria-hidden="true"
       />
       <nav
-        className={`fixed top-16 left-0 bottom-0 w-72 sm:w-80 max-w-[85vw] bg-surface-bright border-r-4 border-candy-pink/20 shadow-lg z-50 px-margin-mobile py-6 flex flex-col gap-1 overflow-y-auto transition-transform duration-300 ease-out ${
+        className={`fixed top-16 left-0 bottom-0 w-72 sm:w-80 max-w-[85vw] bg-surface-bright border-r-4 border-candy-pink/20 shadow-lg z-50 px-margin-mobile py-6 flex flex-col gap-1 overflow-y-auto transition-transform duration-300 ease-out lg:hidden ${
           menuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-hidden={!menuOpen}
