@@ -31,6 +31,9 @@ export function DesktopNav({ categories }: { categories: Category[] }) {
       <Link href="/" className={linkClasses}>
         Home
       </Link>
+      <Link href="/#custom-orders" className={linkClasses}>
+        Custom Orders
+      </Link>
       <div className="relative" ref={containerRef}>
         <button
           onClick={() => setOpen((v) => !v)}
@@ -78,6 +81,9 @@ export function MobileNav({
     <>
       <Link href="/" onClick={onNavigate} className={itemClasses}>
         Home
+      </Link>
+      <Link href="/#custom-orders" onClick={onNavigate} className={itemClasses}>
+        Custom Orders
       </Link>
       <button
         onClick={() => setCategoriesOpen((v) => !v)}

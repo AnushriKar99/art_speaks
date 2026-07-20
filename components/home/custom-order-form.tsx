@@ -11,7 +11,10 @@ export function CustomOrderForm() {
   const [submitted, setSubmitted] = useState(false);
 
   return (
-    <section className="px-margin-mobile md:px-margin-desktop mb-16 relative">
+    <section
+      id="custom-orders"
+      className="px-margin-mobile md:px-margin-desktop mb-16 relative scroll-mt-20"
+    >
       <div className="bg-white/80 backdrop-blur-sm rounded-[40px] p-8 flex flex-col md:flex-row gap-10 items-center border-4 border-candy-pink/20 relative z-10 overflow-hidden shadow-xl">
         <div className="absolute -top-10 -right-10 w-40 h-40 checkered-pattern opacity-30 rotate-12" />
         <div className="md:w-1/2 relative">
