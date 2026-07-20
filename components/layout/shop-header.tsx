@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 
 const NAV_LINKS = [
@@ -16,6 +17,8 @@ const NAV_LINKS = [
 export function ShopHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const pathname = usePathname();
+  const isCartPage = pathname === "/cart";
 
   return (
     <header className="bg-surface-bright border-b border-outline-variant w-full top-0 sticky shadow-sm z-50">
@@ -43,16 +46,18 @@ export function ShopHeader() {
           >
             <Icon name="search" />
           </button>
-          <Link
-            href="/cart"
-            className="text-primary hover:scale-105 transition-transform duration-200 active:scale-95 relative"
-            aria-label="Cart"
-          >
-            <Icon name="shopping_bag" />
-            <span className="absolute -top-1 -right-1 bg-candy-pink text-[10px] w-4 h-4 flex items-center justify-center rounded-full text-on-primary-container font-bold">
-              2
-            </span>
-          </Link>
+          {isCartPage ? null : (
+            <Link
+              href="/cart"
+              className="text-primary hover:scale-105 transition-transform duration-200 active:scale-95 relative"
+              aria-label="Cart"
+            >
+              <Icon name="shopping_bag" />
+              <span className="absolute -top-1 -right-1 bg-candy-pink text-[10px] w-4 h-4 flex items-center justify-center rounded-full text-on-primary-container font-bold">
+                2
+              </span>
+            </Link>
+          )}
         </div>
       </div>
 
