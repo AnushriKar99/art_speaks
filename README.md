@@ -1,1 +1,1 @@
-# art_speaks
+# Art Speaks

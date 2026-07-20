@@ -12,14 +12,14 @@ export function SiteFooter() {
       <div className="max-w-6xl mx-auto flex flex-col items-center gap-4 text-center relative z-10">
         <div className="flex items-center gap-3">
           <Image
-            alt="art_speaks logo"
+            alt="Art Speaks logo"
             className="w-12 h-12 rounded-full border-4 border-candy-pink shadow-md"
             src={LOGO_SRC}
             width={48}
             height={48}
           />
           <h2 className="font-display-lg text-headline-md italic text-primary">
-            art_speaks
+            Art Speaks
           </h2>
         </div>
         <p className="text-body-md text-on-surface-variant max-w-sm font-medium">
@@ -54,7 +54,7 @@ export function SiteFooter() {
             <Icon name="local_shipping" className="text-primary/40 text-3xl" />
           </div>
           <div className="text-label-caps font-bold text-on-surface-variant/40 tracking-widest">
-            © 2024 art_speaks.
+            © 2024 Art Speaks.
           </div>
         </div>
       </div>

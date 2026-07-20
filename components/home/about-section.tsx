@@ -17,7 +17,7 @@ export function AboutSection() {
         </h3>
         <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed font-medium">
           It started with a single brushstroke and a need to speak without
-          words. art_speaks began as a personal journal in 2021, and has
+          words. Art Speaks began as a personal journal in 2021, and has
           since grown into a community of people who appreciate the tactile and
           the thoughtful.
         </p>

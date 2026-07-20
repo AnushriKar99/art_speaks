@@ -16,8 +16,8 @@ export async function generateMetadata({
   const { collection } = await searchParams;
   const { title } = await getCollection(collection);
   return {
-    title: `art_speaks | ${title}`,
-    description: `Browse ${title} from the art_speaks studio.`,
+    title: `Art Speaks | ${title}`,
+    description: `Browse ${title} from the Art Speaks studio.`,
   };
 }
 

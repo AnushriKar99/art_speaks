@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/icon";
 import { getCartItems } from "@/lib/data/cart";
 
 export const metadata: Metadata = {
-  title: "art_speaks | Your Basket",
+  title: "Art Speaks | Your Basket",
   description: "Review the handmade pieces in your basket before checkout.",
 };
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`art_speaks` — an e-commerce storefront for a handcrafted art studio (phone
+`Art Speaks` — an e-commerce storefront for a handcrafted art studio (phone
 charms, worry stones, bookmarks, stationery). Built from Google Stitch design
 exports ("Pastel Artisan" / kawaii-artisanal aesthetic). Two pages exist so far:
 the **homepage** (`/`) and the **shop / all-items page** (`/shop`).
