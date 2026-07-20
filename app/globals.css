@@ -88,13 +88,13 @@
   --font-label-caps: var(--font-hanken), sans-serif;
 
   /* ---- Type scale ---- */
-  --text-display-lg: 48px;
-  --text-display-lg--line-height: 56px;
+  --text-display-lg: 64px;
+  --text-display-lg--line-height: 72px;
   --text-display-lg--letter-spacing: -0.02em;
   --text-display-lg--font-weight: 800;
 
-  --text-display-lg-mobile: 36px;
-  --text-display-lg-mobile--line-height: 42px;
+  --text-display-lg-mobile: 46px;
+  --text-display-lg-mobile--line-height: 52px;
   --text-display-lg-mobile--letter-spacing: -0.02em;
   --text-display-lg-mobile--font-weight: 800;
 
