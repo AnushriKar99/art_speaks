@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
+import { EMAIL_ADDRESS, INSTAGRAM_URL, buildWhatsAppLink } from "@/lib/contact";
 
 const LOGO_SRC =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuC8CWM2T1pTe7YX52FI6aJ1fk6IJKoeTIHagzarw8fUhcbo-iUruIDsKjtq0woXN33YpVzqYDSv_h_AfKy8LtVi1jKOCyQABEEYdZEB7jyeO0efhofGcXrP4bMUXckCN7vUIayJUKJJniIGautEliibwhuA4lclUKsrca1EGYSofv9W-Fua8uaFH1TIyZTEBYiuTTIblSCkS26uCfkTre3mZK5IKtXiFaDsundLMx56ldX6_Ysm-aGJazGROn2WmICpZzE";
@@ -28,14 +29,14 @@ export function SiteFooter() {
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link
-            href="mailto:rockndrollricky@gmail.com"
+            href={`mailto:${EMAIL_ADDRESS}`}
             aria-label="Email"
             className="w-11 h-11 flex items-center justify-center rounded-full bg-candy-pink/10 text-primary hover:bg-candy-pink/30 hover:scale-105 active:scale-95 transition-all duration-200"
           >
             <Icon name="mail" />
           </Link>
           <Link
-            href="https://www.instagram.com/_a_r_t_speaks_?igsh=MXd2bTFwNHRoa2E2Mg=="
+            href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Instagram"
@@ -58,7 +59,7 @@ export function SiteFooter() {
             </svg>
           </Link>
           <Link
-            href="https://wa.me/919123394109"
+            href={buildWhatsAppLink()}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="WhatsApp"

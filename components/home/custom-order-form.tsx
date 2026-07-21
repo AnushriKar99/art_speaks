@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
+import { buildWhatsAppLink } from "@/lib/contact";
 
 const FORM_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuD5gH9anw7guM28PHpEmr9urL_8EJCoflT5JvH7I75AmUD0_h_mGyBg0pHAhSXtvOjAovIwMItxrh4uvdEm_xLIPYOhTHmyNudcjdsxvqDNhqVViqgtENw_cTMenDTa6MPACt0ktzfnAFrkegcdXZn7VIWDmLeMx5cpPO6idi2OxnbXmzM2Os-QbamhIMNIo5aoUnixrRFuWR9oh_zUXG0-BfvjznugLzLZFMe3VZxQ-q-ib3jA2YjGqw";
@@ -42,11 +43,11 @@ export function CustomOrderForm() {
             <div className="text-center py-10">
               <BadgeSticker className="mb-4">Sent!</BadgeSticker>
               <h4 className="text-headline-md font-headline-md text-primary mb-2">
-                Thank you!
+                Almost there!
               </h4>
               <p className="text-body-md text-on-surface-variant">
-                Your custom request is on its way to the studio. I&apos;ll get
-                back to you soon. 💌
+                We&apos;ve opened WhatsApp with your request filled in — just
+                hit send and I&apos;ll get back to you soon. 💌
               </p>
             </div>
           ) : (
@@ -54,7 +55,11 @@ export function CustomOrderForm() {
               className="space-y-5"
               onSubmit={(e) => {
                 e.preventDefault();
-                // Stub: will POST to a Supabase Server Action (custom_requests) later.
+                const formData = new FormData(e.currentTarget);
+                const category = formData.get("category");
+                const description = formData.get("description");
+                const message = `Category: ${category}\nDescription: ${description}`;
+                window.open(buildWhatsAppLink(message), "_blank", "noopener,noreferrer");
                 setSubmitted(true);
               }}
             >
@@ -63,6 +68,7 @@ export function CustomOrderForm() {
                   Pick a Category
                 </label>
                 <select
+                  name="category"
                   className="w-full bg-white border-2 border-candy-pink/20 rounded-2xl py-3 px-4 focus:ring-primary focus:border-primary outline-none text-body-md shadow-sm"
                   defaultValue="Phone Charms"
                 >
@@ -78,6 +84,7 @@ export function CustomOrderForm() {
                   Your Vision
                 </label>
                 <textarea
+                  name="description"
                   required
                   rows={4}
                   className="w-full bg-white border-2 border-candy-pink/20 rounded-2xl py-3 px-4 focus:ring-primary focus:border-primary outline-none text-body-md shadow-sm"
