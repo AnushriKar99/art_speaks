@@ -61,6 +61,12 @@ export function DesktopNav({ categories }: { categories: Category[] }) {
           </div>
         ) : null}
       </div>
+      <Link href="/about" className={linkClasses}>
+        About Us
+      </Link>
+      <Link href="/refund-policy" className={linkClasses}>
+        Refund Policy
+      </Link>
     </nav>
   );
 }
@@ -114,6 +120,12 @@ export function MobileNav({
           ))}
         </div>
       ) : null}
+      <Link href="/about" onClick={onNavigate} className={itemClasses}>
+        About Us
+      </Link>
+      <Link href="/refund-policy" onClick={onNavigate} className={itemClasses}>
+        Refund Policy
+      </Link>
     </>
   );
 }
