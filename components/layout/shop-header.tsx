@@ -53,6 +53,12 @@ export function ShopHeader({ categories }: { categories: Category[] }) {
                 </span>
               </Link>
             )}
+            <button
+              className="text-primary hover:scale-105 transition-transform duration-200 active:scale-95"
+              aria-label="Account"
+            >
+              <Icon name="person" />
+            </button>
           </div>
         </div>
 
