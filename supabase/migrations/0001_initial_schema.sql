@@ -114,7 +114,7 @@ create table public.orders (
   shipping_cents int not null default 0,
   total_cents    int not null default 0,
   currency       text not null default 'USD',
-  stripe_payment_intent_id text,
+  payment_id     text,   -- provider-neutral: Razorpay payment id, UPI ref, etc. (payment deferred for now)
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );
@@ -177,7 +177,7 @@ create index wishlist_customer_id_idx on public.wishlist (customer_id);
 -- Row-Level Security
 -- Note: the service role (used from trusted server code) bypasses RLS.
 -- Order + order_item creation is expected to happen server-side after
--- Stripe validation, so there are intentionally no client insert policies
+-- payment is confirmed, so there are intentionally no client insert policies
 -- for those tables here.
 -- ============================================================
 
