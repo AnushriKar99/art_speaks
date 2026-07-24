@@ -39,22 +39,25 @@ create table public.categories (
 
 -- ============================================================
 -- products  (inventory + storefront listing in one table)
--- best-seller / new-arrival are computed in the app, so no flags here.
+-- is_best_seller / is_new_arrival are editorial flags the shop sets by hand
+-- (which pieces to feature in the homepage carousels).
 -- ============================================================
 create table public.products (
-  id           uuid primary key default gen_random_uuid(),
-  slug         text not null unique,
-  name         text not null,
-  description  text,
-  artisan_note text,
-  price_cents  int not null check (price_cents >= 0),
-  currency     text not null default 'USD',
-  stock_count  int not null default 0 check (stock_count >= 0),
-  category_id  uuid references public.categories(id) on delete set null,
-  images       text[] not null default '{}',
-  is_active    boolean not null default true,
-  created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
+  id             uuid primary key default gen_random_uuid(),
+  slug           text not null unique,
+  name           text not null,
+  description    text,
+  artisan_note   text,
+  price_cents    int not null check (price_cents >= 0),
+  currency       text not null default 'USD',
+  stock_count    int not null default 0 check (stock_count >= 0),
+  category_id    uuid references public.categories(id) on delete set null,
+  images         text[] not null default '{}',
+  is_active      boolean not null default true,
+  is_best_seller boolean not null default false,
+  is_new_arrival boolean not null default false,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
 );
 
 create index products_category_id_idx on public.products (category_id);
