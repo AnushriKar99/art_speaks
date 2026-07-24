@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
@@ -10,12 +11,14 @@ const TABS = [
   { label: "Wishlist", icon: "favorite", href: "/shop?collection=wishlist" },
 ];
 
-export function BottomTabBar() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const isWishlistView =
-    pathname.startsWith("/shop") && searchParams.get("collection") === "wishlist";
-
+/** Presentational bar — no search-params dependency, safe to prerender. */
+function TabBar({
+  pathname,
+  isWishlistView,
+}: {
+  pathname: string;
+  isWishlistView: boolean;
+}) {
   return (
     <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 px-2 bg-surface-container shadow-[0_-4px_12px_rgba(255,183,206,0.15)] rounded-t-xl lg:max-w-md lg:left-1/2 lg:-translate-x-1/2 lg:bottom-4 lg:rounded-2xl lg:shadow-xl">
       {TABS.map((tab) => {
@@ -43,5 +46,29 @@ export function BottomTabBar() {
         );
       })}
     </nav>
+  );
+}
+
+/** Reads the collection query param to highlight the Wishlist tab. */
+function WishlistAwareTabBar() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isWishlistView =
+    pathname.startsWith("/shop") && searchParams.get("collection") === "wishlist";
+  return <TabBar pathname={pathname} isWishlistView={isWishlistView} />;
+}
+
+/** Fallback during static prerender / before search params resolve. */
+function TabBarFallback() {
+  const pathname = usePathname();
+  return <TabBar pathname={pathname} isWishlistView={false} />;
+}
+
+export function BottomTabBar() {
+  // useSearchParams needs a Suspense boundary to prerender (Next.js CSR bailout).
+  return (
+    <Suspense fallback={<TabBarFallback />}>
+      <WishlistAwareTabBar />
+    </Suspense>
   );
 }

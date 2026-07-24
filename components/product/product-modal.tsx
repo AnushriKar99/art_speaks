@@ -13,18 +13,24 @@ export function ProductModal({
   product: Product | null;
   onClose: () => void;
 }) {
+  if (!product) return null;
+  // Keyed on the product id so qty/activeImage reset via remount when a
+  // different product opens — no state-syncing effect needed.
+  return <ProductModalContent key={product.id} product={product} onClose={onClose} />;
+}
+
+function ProductModalContent({
+  product,
+  onClose,
+}: {
+  product: Product;
+  onClose: () => void;
+}) {
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
 
-  // Reset transient state whenever a different product is opened.
-  useEffect(() => {
-    setQty(1);
-    setActiveImage(0);
-  }, [product?.id]);
-
   // Close on Escape and lock body scroll while open.
   useEffect(() => {
-    if (!product) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -34,9 +40,7 @@ export function ProductModal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [product, onClose]);
-
-  if (!product) return null;
+  }, [onClose]);
 
   const lowStock = product.stockCount <= 5;
 
