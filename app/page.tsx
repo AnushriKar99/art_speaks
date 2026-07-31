@@ -1,4 +1,5 @@
 import { SiteHeader } from "@/components/layout/site-header";
+import { AccountMenu } from "@/components/layout/account-menu";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { DecorativeBlobs } from "@/components/home/decorative-blobs";
 import { Hero } from "@/components/home/hero";
@@ -23,7 +24,7 @@ export default async function Home() {
   return (
     <>
       <DecorativeBlobs />
-      <SiteHeader categories={categories} />
+      <SiteHeader categories={categories} account={<AccountMenu />} />
       <main className="pt-20 pb-16 relative">
         <Hero />
 

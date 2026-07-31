@@ -7,7 +7,14 @@ import { Icon } from "@/components/ui/icon";
 import { DesktopNav, MobileNav } from "@/components/layout/header-nav";
 import type { Category } from "@/lib/types";
 
-export function ShopHeader({ categories }: { categories: Category[] }) {
+export function ShopHeader({
+  categories,
+  account,
+}: {
+  categories: Category[];
+  /** <AccountMenu /> — a Server Component, so it arrives as a prop. */
+  account?: React.ReactNode;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
@@ -53,12 +60,7 @@ export function ShopHeader({ categories }: { categories: Category[] }) {
                 </span>
               </Link>
             )}
-            <button
-              className="text-primary hover:scale-105 transition-transform duration-200 active:scale-95"
-              aria-label="Account"
-            >
-              <Icon name="person" />
-            </button>
+            {account}
           </div>
         </div>
 

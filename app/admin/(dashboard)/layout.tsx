@@ -54,8 +54,16 @@ export default async function DashboardLayout({
           <AdminNavDesktop />
 
           <div className="flex items-center gap-3 shrink-0">
+            {/* An admin is a shopper too — this is the way back out. */}
+            <Link
+              href="/"
+              className="squishy flex items-center gap-1.5 rounded-full border-2 border-outline-variant px-3 py-1.5 text-primary font-label-caps text-label-caps uppercase tracking-wider hover:bg-surface-container-high transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <Icon name="storefront" className="text-[18px]" />
+              <span className="hidden sm:inline">View shop</span>
+            </Link>
             <span
-              className="hidden sm:block text-body-md text-on-surface-variant max-w-[16ch] truncate"
+              className="hidden lg:block text-body-md text-on-surface-variant max-w-[16ch] truncate"
               title={user.email}
             >
               {user.email}

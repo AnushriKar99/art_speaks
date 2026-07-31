@@ -10,7 +10,14 @@ import type { Category } from "@/lib/types";
 const LOGO_SRC =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCTyXoVuqkhtjFdw_3_hIVL_LtHaCvoy8wblFrWSVqK-n_C0rk4zIwcUNM5bZEnuAUTCXRq3T2wjrSD5CnoxIAvUePVmCLxv9rRSPr3aSXU9YvJPOPlyajwH1CUOKgs1y1-B-iZp0tED4UVsuEapkAAODGGzb_kE1Bv_9HQ_GuGpJgIJbEhGcjJze4r4gEyOB_-mWS1G0DFHBFw-nO0i8sRopGKZKE-t7DpOYHhbShTlxGQLBuLqotrNcAYs7YaWQXUdcA";
 
-export function SiteHeader({ categories }: { categories: Category[] }) {
+export function SiteHeader({
+  categories,
+  account,
+}: {
+  categories: Category[];
+  /** <AccountMenu /> — a Server Component, so it arrives as a prop. */
+  account?: React.ReactNode;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -58,12 +65,7 @@ export function SiteHeader({ categories }: { categories: Category[] }) {
                 2
               </span>
             </Link>
-            <button
-              className="text-primary hover:scale-105 transition-transform duration-200"
-              aria-label="Account"
-            >
-              <Icon name="person" />
-            </button>
+            {account}
           </div>
         </div>
       </header>

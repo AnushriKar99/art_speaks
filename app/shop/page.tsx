@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ShopHeader } from "@/components/layout/shop-header";
+import { AccountMenu } from "@/components/layout/account-menu";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ProductGrid } from "@/components/product/product-grid";
 import { Icon } from "@/components/ui/icon";
@@ -36,7 +37,7 @@ export default async function ShopPage({
 
   return (
     <>
-      <ShopHeader categories={categories} />
+      <ShopHeader categories={categories} account={<AccountMenu />} />
       <main className="min-h-screen checkered-bg pb-32 relative">
         {/* Floating doodles */}
         <div

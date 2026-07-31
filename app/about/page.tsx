@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ShopHeader } from "@/components/layout/shop-header";
+import { AccountMenu } from "@/components/layout/account-menu";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { Icon } from "@/components/ui/icon";
@@ -37,7 +38,7 @@ export default async function AboutPage() {
 
   return (
     <>
-      <ShopHeader categories={categories} />
+      <ShopHeader categories={categories} account={<AccountMenu />} />
       <main className="min-h-screen dotted-bg pb-32 relative overflow-hidden">
         {/* Floating doodles */}
         <div

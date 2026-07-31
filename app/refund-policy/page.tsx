@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ShopHeader } from "@/components/layout/shop-header";
+import { AccountMenu } from "@/components/layout/account-menu";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { Icon } from "@/components/ui/icon";
 import { getCategories } from "@/lib/data/products";
@@ -15,7 +16,7 @@ export default async function RefundPolicyPage() {
 
   return (
     <>
-      <ShopHeader categories={categories} />
+      <ShopHeader categories={categories} account={<AccountMenu />} />
       <main className="min-h-screen dotted-bg pb-32 relative">
         {/* Floating doodles */}
         <div
