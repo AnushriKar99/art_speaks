@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Runs on every request (see middleware.ts). Two jobs:
+ * Runs on every request (see proxy.ts). Two jobs:
  *  1. Keep the Supabase session fresh by syncing auth cookies onto the
  *     response — without this, Server Components can't read the session.
  *  2. Gate the /admin area: anyone who isn't logged in is bounced to the
