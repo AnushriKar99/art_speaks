@@ -55,11 +55,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Already signed in but sitting on /login → send them on. Honour ?next= so
-  // an admin who was bounced from /admin lands back there, and default to the
-  // storefront otherwise. Only same-site paths, so this can't be used as an
-  // open redirect.
-  if (pathname === "/login" && user) {
+  // Already signed in but sitting on /login or /signup → send them on. Honour
+  // ?next= so an admin who was bounced from /admin lands back there, and
+  // default to the storefront otherwise. Only same-site paths, so this can't
+  // be used as an open redirect.
+  if ((pathname === "/login" || pathname === "/signup") && user) {
     const next = request.nextUrl.searchParams.get("next");
     const url = request.nextUrl.clone();
     url.pathname = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";

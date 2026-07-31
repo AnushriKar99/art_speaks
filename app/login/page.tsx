@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
 
   // Only same-site paths. Without this check, /login?next=https://evil.example
   // would turn our own login into an open redirect.
@@ -37,9 +37,25 @@ export default async function LoginPage({
           <p className="text-body-md text-on-surface-variant">Sign in</p>
         </div>
 
+        {error === "confirm" ? (
+          <p
+            className="text-body-md text-error bg-error-container/50 rounded-2xl px-4 py-3 mb-5"
+            role="alert"
+          >
+            That confirmation link has expired or was already used. Sign in
+            below, or create the account again.
+          </p>
+        ) : null}
+
         <LoginForm next={destination} />
 
         <p className="text-body-md text-on-surface-variant text-center mt-6">
+          New here?{" "}
+          <Link href="/signup" className="underline hover:text-primary">
+            Create an account
+          </Link>
+        </p>
+        <p className="text-body-md text-on-surface-variant text-center mt-2">
           <Link href="/" className="underline hover:text-primary">
             Back to the shop
           </Link>
