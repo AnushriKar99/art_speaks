@@ -210,17 +210,68 @@ uploaded image and an INR price.
 
 ## Phase 4 — Sales
 
-21. **Record Offline Sale** (`/admin/sales/new`) — the approved design: a photo
-    grid of products, tap to add one, tap again for two, badge shows the count,
-    long-press removes. A search bar above the grid keeps it fast past ~40
-    products. Each tile shows current stock, so a tile reading *0 left* for
-    something just sold flags drift. Date defaults to today but is one tap to
-    change — Saturday's market often gets entered on Sunday. Prices auto-fill
-    from the product and stay editable for market discounts.
+21. **Record Offline Sale** (`/admin/sales/new`) — see the layout below.
 
-    Submitting runs one Server Action in a single transaction: insert an `orders`
-    row (`channel='offline'`, `status='paid'`, `contact_email` null) plus its
-    `order_items`. The Phase 1 trigger handles stock.
+### Offline sale entry — approved layout
+
+Phone-first: this gets used standing at a market stall or on the sofa that
+evening. The metric is **taps per sale**, not how the screen looks. A typical
+3-product sale is **4 taps**.
+
+```
+┌───────────────────────────────────────┐
+│  Record Sale                Today ▾   │  date chip — defaults today,
+├───────────────────────────────────────┤  one tap to back-date
+│  🔍  Search products…                 │  filters the grid as you type
+├───────────────────────────────────────┤
+│   ┌─────┐②    ┌─────┐①    ┌─────┐①   │  badge = qty in this sale
+│   │ IMG │     │ IMG │     │ IMG │    │
+│   └─────┘     └─────┘     └─────┘    │
+│   Lavender    Ocean       Bookmark    │
+│   ₹450 · 12   ₹550 · 4    ₹300 · 0 ⚠  │  price · stock left
+│                                       │
+│   ┌─────┐     ┌─────┐     ┌─────┐    │
+│   │ IMG │     │ IMG │     │ IMG │    │
+│   └─────┘     └─────┘     └─────┘    │
+│   Tote        Stickers    Journal     │
+│   ₹800 · 6    ₹150 · 20   ₹1200 · 3   │
+├───────────────────────────────────────┤
+│   4 items                             │
+│   ₹1,450                  [  Save  ]  │
+└───────────────────────────────────────┘
+```
+
+**Interaction rules**
+
+| Gesture | Result |
+| --- | --- |
+| Tap a tile | quantity +1; badge appears |
+| Tap again | +1 again (2 taps = qty 2) |
+| Long-press a tile | remove from sale (qty → 0, badge clears) |
+| Tap the price | inline edit — market discounts, bundle deals |
+| Tap the date chip | date picker, defaults to today |
+| Tap Save | one Server Action, one transaction |
+
+**Why this shape.** The owner recognises their own work by sight, so a photo
+grid needs no reading and no typing. Search only matters past ~40 products, at
+which point the grid would otherwise become a scroll-hunt. Rejected: a
+search-and-add list (~20 interactions per sale) and a full scrolling tally sheet
+(4 taps, but you scroll past 44 zeroes to reach the 4 that sold).
+
+The rendered mockups of all three options are kept at
+`assets/2026-07-31-offline-entry-mockups.html` — open it in a browser to see the
+comparison this decision came from.
+
+**Stock display is load-bearing.** Each tile shows units remaining. A tile
+reading `· 0 ⚠` for something you just sold two of is how count drift becomes
+visible at the moment you can still remember what happened, rather than months
+later. It does not block the sale — see the `greatest(..., 0)` clamp in step 12.
+
+**On submit**, one Server Action in a single transaction inserts an `orders` row
+(`channel='offline'`, `status='paid'`, `contact_email` null, `created_at` set
+from the date chip) plus one `order_items` row per tile with a badge. The Phase 1
+trigger decrements stock. If any insert fails the whole transaction rolls back —
+a half-recorded sale is worse than none.
 
 22. **Sales chart** (`/admin/sales`) — monthly revenue from `monthly_sales`,
     stacked by channel. Aggregation happens in Postgres, not in the browser.
@@ -237,6 +288,34 @@ uploaded image and an INR price.
 stock, and it appears in both the revenue chart and the best-seller ranking.
 
 ---
+
+## Where the Supabase wiring actually happens
+
+There is no single "connect the backend" step — it is spread across the phases,
+because each page wires up the slice it needs. This table is the answer to
+"when does X start talking to Supabase":
+
+| Piece | Reads / writes | Where | Phase |
+| --- | --- | --- | --- |
+| Admin auth | `auth.getUser()`, `profiles.is_admin` | `lib/supabase/auth.ts` | **already wired** — Phase 0 only fixes defects |
+| Session refresh + `/admin` gate | auth cookies | `proxy.ts` → `lib/supabase/middleware.ts` | **already wired** |
+| Product / category admin CRUD | writes `products`, `categories` | Server Actions under `app/admin/` | Phase 3, steps 16–18 |
+| Image upload | writes Storage bucket, then `products.images` | product form | Phase 3, step 17 |
+| **Storefront product reads** | reads `products`, `categories` | `lib/data/products.ts` — replace the function bodies | Phase 3, step 19 |
+| Cart | reads `products` | `lib/data/cart.ts` | Phase 3, step 20 |
+| Offline sale | writes `orders` + `order_items` | Server Action | Phase 4, step 21 |
+| Sales chart | reads `monthly_sales` view | `/admin/sales` | Phase 4, step 22 |
+| Best sellers | reads `order_items`, writes `products.is_best_seller` | `/admin/sales` | Phase 4, step 23 |
+| Order status | reads/writes `orders` | `/admin/orders` | Phase 4, step 24 |
+
+Everything goes through the **user's own session** so RLS evaluates on every
+query. The client helpers (`lib/supabase/client.ts`, `server.ts`) already exist
+and do not change.
+
+The storefront swap (step 19) is the one people expect to be last. It is not —
+it sits mid-Phase-3 because until `/shop` reads Supabase, adding a product in the
+admin panel changes nothing visible, and there is no way to tell whether the
+inventory page works.
 
 ## Deferred (explicitly out of scope)
 
