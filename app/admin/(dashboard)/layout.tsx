@@ -64,9 +64,6 @@ export default async function DashboardLayout({
               <Icon name="home" className="text-[18px]" />
               <span className="hidden sm:inline">Home</span>
             </Link>
-            <span className="hidden lg:block text-body-md text-on-surface-variant">
-              Admin
-            </span>
             <form action={signOut}>
               <button
                 type="submit"
