@@ -22,7 +22,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireAdmin();
+  // Guard only — the header deliberately shows "Admin" rather than the
+  // account's email, so nothing here needs the user record.
+  await requireAdmin();
 
   async function signOut() {
     "use server";
@@ -45,7 +47,7 @@ export default async function DashboardLayout({
             {/* Signature: the shop's own sticker vocabulary, used once, to mark
                 that you're backstage rather than on the storefront. */}
             <span className="badge-sticker !py-1 !px-2.5 !text-[10px] !border-2 rotate-[-4deg] bg-candy-pink text-on-primary-fixed">
-              Studio
+              Admin
             </span>
           </Link>
 
@@ -59,14 +61,11 @@ export default async function DashboardLayout({
               href="/"
               className="squishy flex items-center gap-1.5 rounded-full border-2 border-outline-variant px-3 py-1.5 text-primary font-label-caps text-label-caps uppercase tracking-wider hover:bg-surface-container-high transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <Icon name="storefront" className="text-[18px]" />
-              <span className="hidden sm:inline">View shop</span>
+              <Icon name="home" className="text-[18px]" />
+              <span className="hidden sm:inline">Home</span>
             </Link>
-            <span
-              className="hidden lg:block text-body-md text-on-surface-variant max-w-[16ch] truncate"
-              title={user.email}
-            >
-              {user.email}
+            <span className="hidden lg:block text-body-md text-on-surface-variant">
+              Admin
             </span>
             <form action={signOut}>
               <button

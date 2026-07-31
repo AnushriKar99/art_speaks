@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /**
  * One sign-in page for everyone. Admins land here too — what makes someone an
  * admin is the profiles.is_admin flag, not a different door. After signing in,
- * an admin sees a Studio link in the header; everyone else just carries on
+ * an admin sees an Admin Dashboard link in the header; everyone else carries on
  * shopping.
  */
 export default async function LoginPage({

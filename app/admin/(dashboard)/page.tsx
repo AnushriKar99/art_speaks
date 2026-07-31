@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 
-export const metadata = { title: "Art Speaks | Studio" };
+export const metadata = { title: "Art Speaks | Admin Dashboard" };
 
 const DESTINATIONS = [
   {
@@ -30,11 +30,11 @@ const DESTINATIONS = [
   },
 ];
 
-export default function StudioHomePage() {
+export default function AdminDashboardPage() {
   return (
     <>
       <h1 className="font-headline-md text-headline-lg text-primary mb-1">
-        Studio
+        Admin Dashboard
       </h1>
       <p className="text-body-md text-on-surface-variant mb-8">
         Everything behind the shop front.

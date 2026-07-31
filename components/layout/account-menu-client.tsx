@@ -71,8 +71,8 @@ export function AccountMenuClient({
 
           {isAdmin ? (
             <Link href="/admin" role="menuitem" className={itemClasses} onClick={() => setOpen(false)}>
-              <Icon name="palette" className="text-[20px]" />
-              Studio
+              <Icon name="dashboard" className="text-[20px]" />
+              Admin Dashboard
             </Link>
           ) : null}
 

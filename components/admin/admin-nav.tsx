@@ -9,6 +9,7 @@ import { Icon } from "@/components/ui/icon";
  * (recording one) — a prefix match would light both tabs at once.
  */
 const NAV = [
+  { label: "Dashboard", icon: "dashboard", href: "/admin", exact: true },
   { label: "Inventory", icon: "inventory_2", href: "/admin/inventory" },
   { label: "Record sale", icon: "point_of_sale", href: "/admin/sales/new", exact: true },
   { label: "Sales", icon: "monitoring", href: "/admin/sales", exact: true },
