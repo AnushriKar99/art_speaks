@@ -2,10 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Mock product imagery is currently hosted on Google usercontent (from the
-    // Stitch design export). When the Supabase Storage backend lands, add its
-    // host here and drop these.
     remotePatterns: [
+      // Product images uploaded through the admin panel. Public bucket, so
+      // the path is stable and needs no signing.
+      {
+        protocol: "https",
+        hostname: "wqmgplkinznyapyqgbzo.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      // Legacy mock imagery from the Stitch design export. Drop this once
+      // every product has a real uploaded image (Phase 3).
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
