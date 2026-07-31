@@ -39,8 +39,12 @@ export async function requireAdmin() {
     .eq("id", user.id)
     .single();
 
+  // Logged in but not an admin. Send them to the storefront, NOT to
+  // /admin/login — the middleware bounces any logged-in visitor off the login
+  // page back to /admin, so redirecting there would loop until the browser
+  // gives up with ERR_TOO_MANY_REDIRECTS.
   if (!profile?.is_admin) {
-    redirect("/admin/login");
+    redirect("/");
   }
 
   return user;
