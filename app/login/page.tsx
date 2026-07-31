@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; reason?: string }>;
 }) {
-  const { next, error } = await searchParams;
+  const { next, error, reason } = await searchParams;
 
   // Only same-site paths. Without this check, /login?next=https://evil.example
   // would turn our own login into an open redirect.
@@ -42,8 +42,13 @@ export default async function LoginPage({
             className="text-body-md text-error bg-error-container/50 rounded-2xl px-4 py-3 mb-5"
             role="alert"
           >
-            That confirmation link has expired or was already used. Sign in
-            below, or create the account again.
+            That confirmation link didn&apos;t work. Sign in below, or create
+            the account again.
+            {reason ? (
+              <span className="block mt-1 text-[13px] opacity-70">
+                Reason: {reason}
+              </span>
+            ) : null}
           </p>
         ) : null}
 
