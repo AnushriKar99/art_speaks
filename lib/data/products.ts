@@ -66,6 +66,26 @@ function toCategory(row: CategoryRow): Category {
   };
 }
 
+/**
+ * Drops anything that isn't a usable absolute URL.
+ *
+ * `next/image` throws on a malformed src, and because products render inside
+ * the page itself that throw becomes a 500 for the whole shop — one mistyped
+ * row taking down every product. Filtering here means a bad URL costs that one
+ * card its photo (it falls back to the 🥺 placeholder) and nothing else.
+ */
+function usableImages(images: string[] | null): string[] {
+  return (images ?? []).filter((src) => {
+    try {
+      const { protocol } = new URL(src);
+      return protocol === "https:" || protocol === "http:";
+    } catch {
+      console.warn(`ignoring unusable product image URL: ${src}`);
+      return false;
+    }
+  });
+}
+
 function toProduct(row: ProductRow): Product {
   return {
     id: row.id,
@@ -76,9 +96,7 @@ function toProduct(row: ProductRow): Product {
     description: row.description ?? "",
     artisanNote: row.artisan_note ?? "",
     stockCount: row.stock_count,
-    // `images` is `not null default '{}'`, but a null-safe read costs nothing
-    // and keeps the 🥺 placeholder as the single fallback path.
-    images: row.images ?? [],
+    images: usableImages(row.images),
     categorySlug: row.categories?.slug ?? "",
     isBestSeller: row.is_best_seller,
     isNewArrival: row.is_new_arrival,
