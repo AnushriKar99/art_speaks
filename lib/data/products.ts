@@ -1,258 +1,185 @@
+import { createClient } from "@/lib/supabase/server";
 import type { Category, Product } from "@/lib/types";
 
 /**
- * Local mock data sourced from the Stitch design exports.
+ * Product and category reads, backed by Supabase.
  *
- * These are intentionally exposed through async functions that mirror what the
- * Supabase-backed data layer will look like, so the page/components never need
- * to change when the real backend lands — only the bodies of these functions do.
+ * These run in Server Components, so they use the cookie-backed server client.
+ * No auth is needed to read: the RLS from migration 0001 makes categories
+ * public and products public when `is_active`, so an inactive product is
+ * invisible to the storefront without any filtering here.
+ *
+ * The database speaks snake_case and stores a category_id; the UI speaks
+ * camelCase and a categorySlug. The row → domain mapping below is the only
+ * place that gap is bridged.
  */
 
-// Google usercontent image URLs from the design export. Swapped for Supabase
-// Storage paths later.
-const IMG = {
-  lavenderCharm:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCM3QvU4035pWOGZSDoiSBLXBmQ_EFOplSkv4Nn69hiJoUnuT7dB4exfKdYRn-Y7WZkr9bsA1c8rNh_k_WdBFlYAtFkHP3hXqFMOpMYdbfaAYeYA5Q05jKSbXxTDnKMhOG1REgIsr7sINT7BHUj_O8_6S1XsaY7urDgCuRzPLO8kT5Xnd3WJybuHe9_laxWY93KLGuIGaVCzvcXJx-JSzFk_gYFKbB5mmqlFN1GzBoScM1-WgQzLbfxxA",
-  midnightBookmark:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDN64zI3Qf-bqROPeOsGRLmRBqXYwoMRT1pM2DcogroPULNWs9T4u3xd7sRDKLXVG4eS_c7IcpoTIbVCWgnGZ9YG5CpytPz-F31JWTRlucnBJjPcY9QoqCs-x0uPxm3WQa536e1Kw8rCzirMzcoCU_G5lqx2jet7RDHNmzzxm6lyS0J-HXl5riATlVvACMB8BUrR3PgpYQJuT5WkvJ2Rd0X1FMmeQgpKkUjpJYXhCXEwpEFxw4M0tj9zg",
-  oceanWorryStone:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCh4uQW5dvat_-BaRqYGdF2VU5TdmvPJHtQkPSgiGmP5q2MBW7-n1ggMJPxowLPcw8bp9LfxgEXhY0jJyorUZ9REdqrzPxJ3sIJhwQBGyHsSkoHXVMmQRK9y0gCIVn8MpGbNLTogKXJmSkv8tMVqU9DEs9NPcajvT4LyCG0XsEx1GpeBXVl03V3hei2L9SNfVsTHdzpvDnyDLUMDXH1_HaFaeTrS5CyhzMeXFTRqFxZYzC7idL0CYGHyQ",
-  minimalistTote:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAWYoRN1hcxxRIOZX20NT7clPdw46wRUrgIanuL7ZNdoDS4aUO4Dlxo_50ZAuvc0Nkd66h06sqwBE1jcJKoecwoXX9xWZvmsK513OyZKpl5jdJOgAVQA5gZu0Bkk2XckhQRad6ESJ_jvtTxr7-IyGhX7EgGwLKDEeYBagunhSLG4s7gmsyLa9owpIAP-OiyWKIQB1IRyvut2DU_0cCqosGTsO4R6fssVRbibdxSOddEacese8oN2Zu0Mg",
-  monsteraDish:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCMovsTmQ5y5KA1XQXzQHBGy0l1nYdKwDpZRnkmTs7842JxrevvM-pG3m82RJ_rmEpPECRWKT86y6_hw_cmlfBmyBJmYgaqagCoSxdf_rPCFqsyx-Zs1QcYcQm9tEANyQhQmXjuEbkqBI2VXcd6m-QpdJ44pJqZ7x6u385V9jEx5a3JMbv6Ft1JG3A_pAhTjB-nzMNNix2jeasulQmmM57RuTL4khlTqspX_Qpjp76vDh5CsHhpRjh1fQ",
-  botanicalStickers:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDT5L5upOksw2h3BOIMjilhTq8mspP3NoTC1VsH7I-h-RFaaZmYkQcz01X-DPeR8QYiDdaIxZDVRShcd5Pd4S4i0qtQE-LqwBVJW_qtBIWSS-0ovLsuHNs7xFsBOBdPNxmhD98GQIlOsu3qE6MoKQzyw7nl72pwQt2O_T8SIvQfKXpUaiZE0a0TNv4CHUSsbmDCQQfauUkMe8QBKcsVcqbsFBMQl2SC1Phx-2zNK_e57Z8FSM3hs7t3yg",
-  worryStoneSet:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCtrEDlidBC7Hx4xjLlX54AOEcPWVUvaclvQQ40w1DYnNdgdFBqUDToXsMpbVjJa2kxz6dEl2L1i8aQk4gfo1_GR1HJza2TQyT5iOh4kU1_Rs9_EDCMXCZCRerivH_Hgdf56nktLaUXWRQ7jP95KfiY3E-NH1hMQ2sMHPdNCpc0IteG_uIvcr0hz6AHT8jMR45-78a00NwHCoiPs0Ee4LdVCvXQ5bBv5av5x45gZ95ghRCCjiMA1mNpoQ",
-  dreamyStickers:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAq1RSQwZRKbQKzeQBaiGwvQQpVRYEbPFxsa5HL8nn71M2yb394OGRLHSnpDLJXY6IWDm8NY1ra79cD--1Yc0eM2VXOQTRac13ADnKvicuFVx7b91wbz8Fd_GYmiMa2pubXjcaB8boD_0P5K7SYKz--pzstDwLoJmQOUAZmEiqv9CkhrxwG1Ni_YKflzPYUWtlIco-eKunLguljpWEcLnsxzBdQDyg5LbiP_xoqsjdIp04Ob5csCfVuNQ",
-  ceramicPalette:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBkipR38ayssJ8hepc2EC7n58VyUmdhmuXqG7ZBlM6oyrL7trohten8pIYjXBEvdAqsmg0denrzLAmS_ZYfGoajdML7F9B0A9IhWctGCqY9bX11Mc7NKhngw1-nvYoPxiYHPdGekDcqXa_8hMu2gMXbLZiWluMRlTuiEtCo2VllhCKZ-df0lCoExKvYRGjGFCqujQYSDVYF-A23CJ2n1BHJAT0U8FzJkINYuNZ6tTFjdqxwO8BsTtlPAw",
-  handBoundJournal:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCE3eLndsU7Mmv_N_WVoUi-4EOO_HAVOq0FkmTXYcwb4JXzyAMYwuYPCPBZgUxiPVBd6L0HKw5W2xaW0lNQz3clT1nhRGDFTyL9epQ1FvJvcuywi-qMFFdNeFQZCHsL6tbFAm87FFK0tJAss6oV9L_Xo0CfCFzjAjLMYiNi1xENC9XmdaffBuhRPKjVy7Li1QYOXQ-sOkDKivhcJVOvd-RS7mXiP6MBRHbw4Dt9xFyCLFQfcpWqinHfkQ",
-  categoryCharms:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDKooxAAp8WiC8rTU_TiFkw3Q3nrLdCBRVPYjh2EFCsf35WHNP7KhPFXR-mEwI1OurnjeuWQradKrXNmYC6x3cKvFeNAI9oCGSE_o9uXWqwePWm5QU2N9W4jsGgY9Warmnyx41UYvwbR4yCwqv7koBM4Nhb6_i1fSdvcLW9oDW-tle0BjVsjD_RVPfKF8d_pOVBA784qPGSDAJTjhgplxnljpy_cILywjwUAhiv4uo8hRB1emoO10-0LQ",
-  categoryWorryStones:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCZMpyr4Av8xYjsicArJ9MHyCDMqfTaLQ7VvMS5FRH8GiJ4viPdlf_17xwAuDunZJPqvl220jWpl9I4LDNfYAQRFLx0eZPOQUOgjGQ6Gl6Dq7ZHOgwjXmkI9QLfKN0Lu_2LF8yE4Mexol_nQY8mzT6s1wPFVCCUL3sIGX-xhZfh7_HIQ7lr84iK6tA-vjMAweXVpBIRinjBl668iUzwqchEHD2bojYfxYSVLy-VPFXNQU4LvXK_2Djajw",
-} as const;
+/** Shown until a category has real photography. */
+const CATEGORY_PLACEHOLDER_IMAGE =
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuDKooxAAp8WiC8rTU_TiFkw3Q3nrLdCBRVPYjh2EFCsf35WHNP7KhPFXR-mEwI1OurnjeuWQradKrXNmYC6x3cKvFeNAI9oCGSE_o9uXWqwePWm5QU2N9W4jsGgY9Warmnyx41UYvwbR4yCwqv7koBM4Nhb6_i1fSdvcLW9oDW-tle0BjVsjD_RVPfKF8d_pOVBA784qPGSDAJTjhgplxnljpy_cILywjwUAhiv4uo8hRB1emoO10-0LQ";
 
-// Placeholder for category cards until real photography is added per category.
-const CATEGORY_PLACEHOLDER_IMAGE = IMG.categoryCharms;
+/** Fallback accent so a category with no colour set still renders sensibly. */
+const DEFAULT_ACCENT = "#FFB7CE";
 
-// One distinct pastel accent per card, from the same kawaii palette family.
-const CATEGORIES: Category[] = [
-  { name: "Phone Charms", slug: "phone-charms", accent: "#FFB7CE" },
-  { name: "Keychains/Worry Stones", slug: "keychains-worry-stones", accent: "#E0BBE4" },
-  { name: "Bookmarks", slug: "bookmarks", accent: "#98FFD9" },
-  { name: "Paintings", slug: "paintings", accent: "#FDFFAB" },
-  { name: "Bag Charms", slug: "bag-charms", accent: "#FFD3B0" },
-  { name: "Fridge Magnets", slug: "fridge-magnets", accent: "#AEE2FF" },
-  { name: "Tote Bags", slug: "tote-bags", accent: "#C7CEEA" },
-  { name: "Stickers", slug: "stickers", accent: "#FFAAA7" },
-].map(({ name, slug, accent }) => ({
-  id: `cat-${slug}`,
-  name,
-  slug,
-  accentColor: accent,
-  shadowColor: accent,
-  image: CATEGORY_PLACEHOLDER_IMAGE,
-}));
+type CategoryRow = {
+  id: string;
+  slug: string;
+  name: string;
+  accent_color: string | null;
+  image_url: string | null;
+};
 
-const DESCRIPTION =
-  "Each piece is crafted with intention and a sprinkle of studio magic. Small, beautiful objects have the power to turn your daily ritual into a moment of pure creativity.";
+/** The join gives back either an object or null, depending on the row. */
+type ProductRow = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  artisan_note: string | null;
+  price_cents: number;
+  currency: string;
+  stock_count: number;
+  images: string[] | null;
+  is_best_seller: boolean;
+  is_new_arrival: boolean;
+  categories: { slug: string } | null;
+};
 
-const ARTISAN_NOTE =
-  '"This piece was inspired by the quiet morning light hitting the studio floor. Every detail was mixed and finished by hand to capture that exact translucent quality." — Lucy';
+const PRODUCT_COLUMNS =
+  "id, slug, name, description, artisan_note, price_cents, currency, stock_count, images, is_best_seller, is_new_arrival, categories(slug)";
 
-const PRODUCTS: Product[] = [
-  {
-    id: "prod-lavender-whisper-charm",
-    name: "Lavender Whisper Charm",
-    slug: "lavender-whisper-charm",
-    priceCents: 45000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 5,
-    images: [IMG.lavenderCharm],
-    categorySlug: "phone-charms",
-    isBestSeller: true,
-    isNewArrival: false,
-  },
-  {
-    id: "prod-midnight-hillside-bookmark",
-    name: "Midnight Hillside Bookmark",
-    slug: "midnight-hillside-bookmark",
-    priceCents: 30000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 12,
-    images: [IMG.midnightBookmark],
-    categorySlug: "bookmarks",
-    isBestSeller: true,
-    isNewArrival: false,
-  },
-  {
-    id: "prod-ocean-breeze-worry-stone",
-    name: "Ocean Breeze Worry Stone",
-    slug: "ocean-breeze-worry-stone",
-    priceCents: 55000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 8,
-    images: [IMG.oceanWorryStone],
-    categorySlug: "keychains-worry-stones",
-    isBestSeller: true,
-    isNewArrival: false,
-  },
-  {
-    id: "prod-minimalist-profile-tote",
-    name: "Minimalist Profile Tote",
-    slug: "minimalist-profile-tote",
-    priceCents: 85000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 15,
-    images: [IMG.minimalistTote],
-    categorySlug: "tote-bags",
-    isBestSeller: false,
-    isNewArrival: true,
-  },
-  {
-    id: "prod-monstera-trinket-dish",
-    name: "Monstera Trinket Dish",
-    slug: "monstera-trinket-dish",
-    priceCents: 65000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 6,
-    images: [IMG.monsteraDish],
-    categorySlug: "keychains-worry-stones",
-    isBestSeller: false,
-    isNewArrival: true,
-  },
-  {
-    id: "prod-botanical-sticker-pack",
-    name: "Botanical Sticker Pack",
-    slug: "botanical-sticker-pack",
-    priceCents: 25000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 40,
-    images: [IMG.botanicalStickers],
-    categorySlug: "stickers",
-    isBestSeller: false,
-    isNewArrival: true,
-  },
-  {
-    id: "prod-worry-stone-set",
-    name: "Worry Stone Set",
-    slug: "worry-stone-set",
-    priceCents: 80000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 5,
-    images: [IMG.worryStoneSet],
-    categorySlug: "keychains-worry-stones",
-    isBestSeller: false,
-    isNewArrival: false,
-  },
-  {
-    id: "prod-minimalist-tote",
-    name: "Minimalist Tote",
-    slug: "minimalist-tote",
-    priceCents: 45000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 9,
-    images: [IMG.minimalistTote],
-    categorySlug: "tote-bags",
-    isBestSeller: false,
-    isNewArrival: false,
-  },
-  {
-    id: "prod-sticker-sheet-dreamy",
-    name: "Sticker Sheet 'Dreamy'",
-    slug: "sticker-sheet-dreamy",
-    priceCents: 20000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 30,
-    images: [IMG.dreamyStickers],
-    categorySlug: "stickers",
-    isBestSeller: false,
-    isNewArrival: false,
-  },
-  {
-    id: "prod-ceramic-paint-palette",
-    name: "Ceramic Paint Palette",
-    slug: "ceramic-paint-palette",
-    priceCents: 110000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 4,
-    images: [IMG.ceramicPalette],
-    categorySlug: "stationery",
-    isBestSeller: false,
-    isNewArrival: false,
-  },
-  {
-    id: "prod-hand-bound-journal",
-    name: "Hand-Bound Journal",
-    slug: "hand-bound-journal",
-    priceCents: 95000,
-    currency: "INR",
-    description: DESCRIPTION,
-    artisanNote: ARTISAN_NOTE,
-    stockCount: 7,
-    images: [IMG.handBoundJournal],
-    categorySlug: "bookmarks",
-    isBestSeller: false,
-    isNewArrival: false,
-  },
-];
+function toCategory(row: CategoryRow): Category {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    accentColor: row.accent_color ?? DEFAULT_ACCENT,
+    // The schema has no separate shadow colour; the design uses the accent for
+    // both the border and the offset shadow.
+    shadowColor: row.accent_color ?? DEFAULT_ACCENT,
+    image: row.image_url ?? CATEGORY_PLACEHOLDER_IMAGE,
+  };
+}
+
+function toProduct(row: ProductRow): Product {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    priceCents: row.price_cents,
+    currency: row.currency,
+    description: row.description ?? "",
+    artisanNote: row.artisan_note ?? "",
+    stockCount: row.stock_count,
+    // `images` is `not null default '{}'`, but a null-safe read costs nothing
+    // and keeps the 🥺 placeholder as the single fallback path.
+    images: row.images ?? [],
+    categorySlug: row.categories?.slug ?? "",
+    isBestSeller: row.is_best_seller,
+    isNewArrival: row.is_new_arrival,
+  };
+}
 
 export async function getCategories(): Promise<Category[]> {
-  return CATEGORIES;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, slug, name, accent_color, image_url")
+    .order("sort_order");
+
+  if (error) {
+    console.error("getCategories:", error.message);
+    return [];
+  }
+  return (data as CategoryRow[]).map(toCategory);
 }
 
 export async function getCategoryBySlug(
   slug: string,
 ): Promise<Category | undefined> {
-  return CATEGORIES.find((c) => c.slug === slug);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, slug, name, accent_color, image_url")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getCategoryBySlug:", error.message);
+    return undefined;
+  }
+  return data ? toCategory(data as CategoryRow) : undefined;
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  return PRODUCTS;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_COLUMNS)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getAllProducts:", error.message);
+    return [];
+  }
+  return (data as unknown as ProductRow[]).map(toProduct);
 }
 
 export async function getProductsByCategory(slug?: string): Promise<Product[]> {
-  if (!slug) return PRODUCTS;
-  return PRODUCTS.filter((p) => p.categorySlug === slug);
+  if (!slug) return getAllProducts();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_COLUMNS)
+    // Filtering on a joined column, so the inner-join hint is required —
+    // without `!inner` this would return every product.
+    .eq("categories.slug", slug)
+    .not("categories", "is", null)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getProductsByCategory:", error.message);
+    return [];
+  }
+  return (data as unknown as ProductRow[])
+    .map(toProduct)
+    .filter((p) => p.categorySlug === slug);
 }
 
 export async function getBestSellers(): Promise<Product[]> {
-  return PRODUCTS.filter((p) => p.isBestSeller);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_COLUMNS)
+    .eq("is_best_seller", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getBestSellers:", error.message);
+    return [];
+  }
+  return (data as unknown as ProductRow[]).map(toProduct);
 }
 
 export async function getNewArrivals(): Promise<Product[]> {
-  return PRODUCTS.filter((p) => p.isNewArrival);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_COLUMNS)
+    .eq("is_new_arrival", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getNewArrivals:", error.message);
+    return [];
+  }
+  return (data as unknown as ProductRow[]).map(toProduct);
 }
 
 /**
- * Wishlist is user-specific and depends on persisted favorites, which do not
- * exist yet (no Auth/Supabase). Returns empty for now; swap the body when the
- * backend lands.
+ * Wishlist needs persisted favourites, which the heart buttons don't write yet.
+ * The `wishlist` table and its RLS exist; only the UI wiring is missing.
  */
 export async function getWishlist(): Promise<Product[]> {
   return [];
@@ -300,7 +227,7 @@ export async function getCollection(slug?: string): Promise<CollectionView> {
     return {
       title: "All Items",
       eyebrow: "The Full Collection",
-      products: PRODUCTS,
+      products: await getAllProducts(),
     };
   }
 
@@ -327,6 +254,6 @@ export async function getCollection(slug?: string): Promise<CollectionView> {
   return {
     title: "All Items",
     eyebrow: "The Full Collection",
-    products: PRODUCTS,
+    products: await getAllProducts(),
   };
 }
