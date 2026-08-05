@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
       // the path is stable and needs no signing.
       {
         protocol: "https",
-        hostname: "wqmgplkinznyapyqgbzo.supabase.co",
+        hostname: "udflrtaipqzbsfhtzuue.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
       // Legacy mock imagery from the Stitch design export. Drop this once

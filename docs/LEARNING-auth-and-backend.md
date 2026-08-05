@@ -34,7 +34,7 @@ it isn't is Section 5.
 In `.env.local`:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://wqmgplkinznyapyqgbzo.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://udflrtaipqzbsfhtzuue.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
 # SUPABASE_SERVICE_ROLE_KEY=   ← intentionally unset
 ```
