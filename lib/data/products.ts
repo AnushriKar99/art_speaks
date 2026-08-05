@@ -1,13 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@/lib/supabase/public";
 import type { Category, Product } from "@/lib/types";
 
 /**
  * Product and category reads, backed by Supabase.
  *
- * These run in Server Components, so they use the cookie-backed server client.
- * No auth is needed to read: the RLS from migration 0001 makes categories
- * public and products public when `is_active`, so an inactive product is
- * invisible to the storefront without any filtering here.
+ * Read through the sessionless client (see lib/supabase/public.ts), so the
+ * storefront always shows what a visitor sees — an admin browsing the shop
+ * would otherwise see inactive products, since RLS grants them `for all` on
+ * products and that includes SELECT.
+ *
+ * No auth is needed: the RLS from migration 0001 makes categories public and
+ * products public when `is_active`, so an inactive product is invisible here
+ * without any filtering in application code.
  *
  * The database speaks snake_case and stores a category_id; the UI speaks
  * camelCase and a categorySlug. The row → domain mapping below is the only
@@ -80,39 +85,51 @@ function toProduct(row: ProductRow): Product {
   };
 }
 
-export async function getCategories(): Promise<Category[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, slug, name, accent_color, image_url")
-    .order("sort_order");
+/**
+ * Categories are read by the header on every single page, and they change
+ * roughly never — so paying a round trip for them per request was the largest
+ * fixed cost on the site.
+ *
+ * Cached for an hour and tagged, so the admin panel can drop the cache the
+ * moment a category is edited:  revalidateTag(CATEGORIES_TAG)
+ */
+export const CATEGORIES_TAG = "categories";
 
-  if (error) {
-    console.error("getCategories:", error.message);
-    return [];
-  }
-  return (data as CategoryRow[]).map(toCategory);
+const loadCategories = unstable_cache(
+  async (): Promise<Category[]> => {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, slug, name, accent_color, image_url")
+      .order("sort_order");
+
+    if (error) {
+      console.error("getCategories:", error.message);
+      return [];
+    }
+    return (data as CategoryRow[]).map(toCategory);
+  },
+  ["categories"],
+  { revalidate: 3600, tags: [CATEGORIES_TAG] },
+);
+
+export async function getCategories(): Promise<Category[]> {
+  return loadCategories();
 }
 
+/**
+ * Resolved from the cached list rather than its own query — with eight
+ * categories, filtering an array we already have beats a second round trip.
+ */
 export async function getCategoryBySlug(
   slug: string,
 ): Promise<Category | undefined> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, slug, name, accent_color, image_url")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (error) {
-    console.error("getCategoryBySlug:", error.message);
-    return undefined;
-  }
-  return data ? toCategory(data as CategoryRow) : undefined;
+  const categories = await loadCategories();
+  return categories.find((c) => c.slug === slug);
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_COLUMNS)
@@ -128,7 +145,7 @@ export async function getAllProducts(): Promise<Product[]> {
 export async function getProductsByCategory(slug?: string): Promise<Product[]> {
   if (!slug) return getAllProducts();
 
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_COLUMNS)
@@ -148,7 +165,7 @@ export async function getProductsByCategory(slug?: string): Promise<Product[]> {
 }
 
 export async function getBestSellers(): Promise<Product[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_COLUMNS)
@@ -163,7 +180,7 @@ export async function getBestSellers(): Promise<Product[]> {
 }
 
 export async function getNewArrivals(): Promise<Product[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_COLUMNS)
@@ -240,12 +257,19 @@ export async function getCollection(slug?: string): Promise<CollectionView> {
     };
   }
 
-  const category = await getCategoryBySlug(slug);
+  // Fetched together, not in sequence. The products query doesn't depend on
+  // the category lookup — only the title does — so awaiting one before starting
+  // the other doubled the latency of every category page for no reason.
+  const [category, products] = await Promise.all([
+    getCategoryBySlug(slug),
+    getProductsByCategory(slug),
+  ]);
+
   if (category) {
     return {
       title: category.name,
       eyebrow: "Category",
-      products: await getProductsByCategory(slug),
+      products,
       categorySlug: slug,
     };
   }
