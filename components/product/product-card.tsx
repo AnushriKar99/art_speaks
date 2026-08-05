@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { ProductImage } from "@/components/ui/product-image";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
@@ -26,10 +26,9 @@ export function ProductCard({
       }}
     >
       <div className="aspect-square rounded-[2rem] bg-surface-container-high mb-3 overflow-hidden relative shadow-sm border-2 border-candy-pink/10">
-        <Image
+        <ProductImage
           src={product.images[0]}
           alt={product.name}
-          fill
           sizes="(min-width: 768px) 33vw, 50vw"
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />

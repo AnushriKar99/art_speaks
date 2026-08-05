@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { ProductImage } from "@/components/ui/product-image";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
@@ -62,10 +62,9 @@ function ProductModalContent({
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {/* Image */}
           <div className="relative aspect-[4/3] md:aspect-video bg-surface-container-high overflow-hidden">
-            <Image
+            <ProductImage
               src={product.images[activeImage]}
               alt={product.name}
-              fill
               sizes="(min-width: 768px) 42rem, 100vw"
               className="object-cover"
             />

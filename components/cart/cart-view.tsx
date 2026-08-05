@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import type { CartItem } from "@/lib/data/cart";
@@ -58,10 +58,9 @@ export function CartView({ initialItems }: { initialItems: CartItem[] }) {
             className="bg-surface-container-lowest rounded-xl flex items-center gap-4 border border-outline-variant hover:border-primary transition-colors py-2 px-4"
           >
             <div className="relative w-16 h-16 flex-shrink-0 rounded-lg border border-outline-variant overflow-hidden bg-surface-container-low">
-              <Image
+              <ProductImage
                 src={product.images[0]}
                 alt={product.name}
-                fill
                 sizes="64px"
                 className="object-cover"
               />

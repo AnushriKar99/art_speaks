@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
+import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
@@ -137,10 +137,9 @@ function BestSellerCard({
       }}
     >
       <div className="aspect-square rounded-[2rem] bg-surface-container-high mb-3 overflow-hidden relative shadow-sm border-2 border-candy-pink/10">
-        <Image
+        <ProductImage
           src={product.images[0]}
           alt={product.name}
-          fill
           sizes="260px"
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
@@ -198,10 +197,9 @@ function ArrivalCard({
       }}
     >
       <div className="aspect-[4/5] rounded-[2.5rem] bg-white mb-3 overflow-hidden shadow-md border-4 border-white ring-2 ring-mint-green/30 relative">
-        <Image
+        <ProductImage
           src={product.images[0]}
           alt={product.name}
-          fill
           sizes="220px"
           className="object-cover transition-transform duration-700 group-hover:scale-105"
         />
