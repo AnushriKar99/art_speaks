@@ -36,8 +36,11 @@ Last updated 2026-07-31.
       themselves an admin.
 - [ ] **Confirm `0005` applied** — `products.currency` / `orders.currency`
       should default to `'INR'`.
-- [ ] **Auth URL configuration** — Site URL and `/auth/confirm` must be
-      allow-listed, or confirmation emails fail.
+- [ ] **Auth URL configuration** — *deferred to deployment (2026-08-05).* Site
+      URL and a `http://localhost:3000/**` redirect entry are needed before
+      **customer signup** can be tested; admin login is unaffected because that
+      user was created directly and never needed a confirmation email. Set both
+      the production domain and the localhost entry when deploying.
 - [ ] **Switch the signup email template** to the `token_hash` form. The default
       template's PKCE `code` only works in the browser that signed up, so
       signing up on a laptop and opening the email on a phone fails:
