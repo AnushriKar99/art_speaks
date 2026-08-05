@@ -1,0 +1,30 @@
+-- ============================================================================
+--  Art Speaks — complete database setup, in one paste.
+--
+--  Use this when standing up a fresh Supabase project (e.g. moving region).
+--  Paste the whole file into the SQL editor and run once. It is every
+--  migration 0001–0007 followed by the category and product seeds, in the
+--  order they must run.
+--
+--  Safe to re-run: every statement is idempotent, and the seeds use
+--  `on conflict` so they update rather than duplicate.
+--
+--  This file is GENERATED. Do not edit it by hand — change the migration or
+--  seed it came from and regenerate, or the two will drift apart.
+--
+--  AFTER running this, four things still need doing by hand:
+--    1. Auth → Users → Add user (auto-confirm), then:
+--         update public.profiles set is_admin = true
+--         where id = (select id from auth.users where email = 'YOUR@EMAIL');
+--    2. Storage → New bucket named exactly `product-images`, marked Public.
+--       Then run the storage policies at the very bottom of this file.
+--    3. Auth → URL Configuration: set Site URL, and allow-list
+--       <site>/auth/confirm as a redirect URL.
+--    4. Auth → Email Templates → Confirm signup, replace the link with:
+--         {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/
+--       (the default template's PKCE code only works in the browser that
+--        signed up, so cross-device confirmation fails without this)
+-- ============================================================================
+
+
+

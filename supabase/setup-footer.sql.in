@@ -1,0 +1,26 @@
+
+-- ####################################################################
+-- ### Storage policies — run AFTER creating the `product-images` bucket
+-- ####################################################################
+
+-- Product photos are meant to be seen, so public read. Writes are gated on
+-- the is_admin() helper from 0003, so only a flagged admin can upload.
+drop policy if exists "product images are public" on storage.objects;
+create policy "product images are public"
+  on storage.objects for select
+  using (bucket_id = 'product-images');
+
+drop policy if exists "admins manage product images" on storage.objects;
+create policy "admins manage product images"
+  on storage.objects for all
+  using (bucket_id = 'product-images' and public.is_admin())
+  with check (bucket_id = 'product-images' and public.is_admin());
+
+
+-- ####################################################################
+-- ### Check it worked
+-- ####################################################################
+-- Expect 8 categories, 8 products, prices 50 / 70 / 120.
+--   select (select count(*) from public.categories) as categories,
+--          (select count(*) from public.products)   as products;
+--   select name, price_rupees, stock_count from public.products_in_rupees;
