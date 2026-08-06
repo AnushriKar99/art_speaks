@@ -190,3 +190,128 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
     })),
   }));
 }
+
+/* ----------------------------------------------------------------- reports */
+
+export interface MonthlySales {
+  /** YYYY-MM */
+  month: string;
+  byChannel: Record<string, number>;
+  revenueCents: number;
+  orderCount: number;
+}
+
+export interface BestSeller {
+  productId: string | null;
+  name: string;
+  units: number;
+  revenueCents: number;
+}
+
+export interface SalesSummary {
+  months: MonthlySales[];
+  bestSellers: BestSeller[];
+  totalRevenueCents: number;
+  totalOrders: number;
+  totalUnits: number;
+  channels: string[];
+}
+
+/** Only money actually taken counts as a sale. */
+const COUNTED = ["paid", "shipped", "delivered"];
+
+/**
+ * Everything the Sales page shows.
+ *
+ * Monthly figures come from the monthly_sales view (0006), which already
+ * applies the paid-orders filter — so "sales" means the same thing here as
+ * everywhere else rather than being re-derived per screen.
+ *
+ * Best sellers are aggregated in JS. With a few hundred line items that is
+ * cheaper than a round trip to a dedicated view; if this ever gets slow, the
+ * fix is a view alongside monthly_sales, not a bigger loop.
+ */
+export async function getSalesSummary(): Promise<SalesSummary> {
+  const supabase = await createClient();
+
+  const [monthly, items] = await Promise.all([
+    supabase
+      .from("monthly_sales")
+      .select("month, channel, order_count, revenue_cents")
+      .order("month"),
+    supabase
+      .from("order_items")
+      .select("product_id, product_name, quantity, unit_price_cents, orders!inner(status)")
+      .in("orders.status", COUNTED),
+  ]);
+
+  if (monthly.error) console.error("getSalesSummary/monthly:", monthly.error.message);
+  if (items.error) console.error("getSalesSummary/items:", items.error.message);
+
+  // ---- months ----
+  const byMonth = new Map<string, MonthlySales>();
+  const channelSet = new Set<string>();
+
+  for (const r of (monthly.data ?? []) as {
+    month: string;
+    channel: string;
+    order_count: number;
+    revenue_cents: number;
+  }[]) {
+    const key = r.month.slice(0, 7); // date_trunc gives a full timestamp
+    channelSet.add(r.channel);
+    const existing = byMonth.get(key) ?? {
+      month: key,
+      byChannel: {},
+      revenueCents: 0,
+      orderCount: 0,
+    };
+    existing.byChannel[r.channel] =
+      (existing.byChannel[r.channel] ?? 0) + Number(r.revenue_cents);
+    existing.revenueCents += Number(r.revenue_cents);
+    existing.orderCount += Number(r.order_count);
+    byMonth.set(key, existing);
+  }
+
+  const months = [...byMonth.values()].sort((a, b) =>
+    a.month.localeCompare(b.month),
+  );
+
+  // ---- best sellers ----
+  const byProduct = new Map<string, BestSeller>();
+  let totalUnits = 0;
+
+  for (const l of (items.data ?? []) as unknown as {
+    product_id: string | null;
+    product_name: string;
+    quantity: number;
+    unit_price_cents: number;
+  }[]) {
+    totalUnits += l.quantity;
+    // Keyed by name so a deleted product still aggregates with its own history
+    // rather than collapsing every orphaned line into one row.
+    const key = l.product_id ?? `name:${l.product_name}`;
+    const existing = byProduct.get(key) ?? {
+      productId: l.product_id,
+      name: l.product_name,
+      units: 0,
+      revenueCents: 0,
+    };
+    existing.units += l.quantity;
+    existing.revenueCents += l.unit_price_cents * l.quantity;
+    byProduct.set(key, existing);
+  }
+
+  const bestSellers = [...byProduct.values()].sort(
+    (a, b) => b.units - a.units || a.name.localeCompare(b.name),
+  );
+
+  return {
+    months,
+    bestSellers,
+    totalRevenueCents: months.reduce((n, m) => n + m.revenueCents, 0),
+    totalOrders: months.reduce((n, m) => n + m.orderCount, 0),
+    totalUnits,
+    channels: [...channelSet].sort(),
+  };
+}
