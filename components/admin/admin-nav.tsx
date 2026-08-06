@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon } from "@/components/ui/icon";
 
 /**
  * `exact` distinguishes /admin/sales (the chart) from /admin/sales/new
  * (recording one) — a prefix match would light both tabs at once.
  */
 const NAV = [
-  { label: "Dashboard", icon: "dashboard", href: "/admin", exact: true },
-  { label: "Inventory", icon: "inventory_2", href: "/admin/inventory" },
-  { label: "Record sale", icon: "point_of_sale", href: "/admin/sales/new", exact: true },
-  { label: "Sales", icon: "monitoring", href: "/admin/sales", exact: true },
-  { label: "Orders", icon: "receipt_long", href: "/admin/orders" },
+  { label: "Dashboard", href: "/admin", exact: true },
+  { label: "Inventory", href: "/admin/inventory" },
+  { label: "Record sale", href: "/admin/sales/new", exact: true },
+  { label: "Sales", href: "/admin/sales", exact: true },
+  { label: "Orders", href: "/admin/orders" },
 ];
 
 function isActive(pathname: string, href: string, exact?: boolean) {
@@ -39,7 +38,6 @@ export function AdminNavDesktop() {
                 : "text-primary hover:bg-surface-container-high"
             }`}
           >
-            <Icon name={item.icon} className="text-[20px]" filled={active} />
             {item.label}
           </Link>
         );
@@ -65,12 +63,13 @@ export function AdminNavMobile() {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`squishy flex flex-col items-center justify-center gap-0.5 flex-1 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary ${
-              active ? "text-primary" : "text-on-surface-variant"
+            className={`squishy flex items-center justify-center flex-1 my-2 mx-0.5 rounded-xl px-1 text-center focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary transition-colors ${
+              active
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant"
             }`}
           >
-            <Icon name={item.icon} className="text-[22px]" filled={active} />
-            <span className="font-label-caps text-[10px] leading-none text-center">
+            <span className="font-label-caps text-[12px] leading-tight text-balance">
               {item.label}
             </span>
           </Link>
