@@ -302,6 +302,12 @@ async function searchProductsFuzzy(term: string): Promise<Product[]> {
   const supabase = createPublicClient();
   const { data, error } = await supabase.rpc("search_products_fuzzy", {
     search_term: term,
+    // The function defaults to 0.15, which lets noise through: "strawbery"
+    // returned Starry Night at 0.15 alongside Strawberry Pin at 0.56. Genuine
+    // near-misses measured 0.36 and above, so 0.25 sits clear of both.
+    // Tuned here rather than in the migration so the function stays general
+    // and the threshold can move without a schema change.
+    min_score: 0.25,
   });
 
   if (error) {
