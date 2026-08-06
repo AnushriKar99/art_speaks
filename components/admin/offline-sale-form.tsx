@@ -19,11 +19,11 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
   const [pending, startTransition] = useTransition();
 
   const [qty, setQty] = useState<Record<string, number>>({});
-  const [prices, setPrices] = useState<Record<string, number>>({});
   const [soldOn, setSoldOn] = useState(today());
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [capped, setCapped] = useState<string | null>(null);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -31,7 +31,7 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
     return products.filter((p) => p.name.toLowerCase().includes(q));
   }, [products, search]);
 
-  const priceOf = (p: AdminProduct) => prices[p.id] ?? p.priceCents / 100;
+  const priceOf = (p: AdminProduct) => p.priceCents / 100;
 
   const lines: SaleLine[] = Object.entries(qty)
     .filter(([, n]) => n > 0)
@@ -43,10 +43,25 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
   const itemCount = lines.reduce((n, l) => n + l.quantity, 0);
   const totalRupees = lines.reduce((n, l) => n + l.quantity * l.priceRupees, 0);
 
+  /**
+   * Never lets the tally exceed what is in stock. Recording a sale of five when
+   * the system holds two produces a number you already know is wrong — the
+   * place to fix that is the stock count in Inventory, not the sale.
+   */
   function bump(id: string, by: number) {
     setSaved(false);
+    const stock = products.find((p) => p.id === id)?.stockCount ?? 0;
+
     setQty((prev) => {
-      const next = Math.max(0, (prev[id] ?? 0) + by);
+      const current = prev[id] ?? 0;
+      const wanted = current + by;
+      const next = Math.min(Math.max(0, wanted), stock);
+
+      if (by > 0 && wanted > stock) {
+        setCapped(id);
+        window.setTimeout(() => setCapped((c) => (c === id ? null : c)), 2000);
+      }
+
       const copy = { ...prev };
       if (next === 0) delete copy[id];
       else copy[id] = next;
@@ -63,7 +78,6 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
         return;
       }
       setQty({});
-      setPrices({});
       setSaved(true);
       router.refresh(); // pull fresh stock counts
     });
@@ -97,18 +111,27 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
         {visible.map((p) => {
           const n = qty[p.id] ?? 0;
           const left = p.stockCount - n;
+          const soldOut = p.stockCount === 0;
+          const atLimit = n >= p.stockCount;
           return (
-            <div key={p.id}>
+            <div key={p.id} className={soldOut ? "opacity-50" : undefined}>
               <button
                 type="button"
+                disabled={soldOut}
                 onClick={() => bump(p.id, 1)}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   bump(p.id, -1);
                 }}
-                aria-label={`Add ${p.name}`}
-                className={`squishy relative w-full aspect-square rounded-2xl overflow-hidden border-2 transition-colors ${
-                  n > 0 ? "border-primary" : "border-candy-pink/30 hover:border-candy-pink"
+                aria-label={
+                  soldOut ? `${p.name} — none in stock` : `Add ${p.name}`
+                }
+                className={`squishy relative w-full aspect-square rounded-2xl overflow-hidden border-2 transition-colors disabled:cursor-not-allowed ${
+                  capped === p.id
+                    ? "border-error"
+                    : n > 0
+                      ? "border-primary"
+                      : "border-candy-pink/30 hover:border-candy-pink"
                 }`}
               >
                 <ProductImage src={p.images[0]} alt={p.name} sizes="160px" className="object-cover" />
@@ -119,23 +142,25 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
                 )}
               </button>
 
-              <p className="text-[13px] text-on-surface mt-1 leading-tight line-clamp-2">{p.name}</p>
-              <div className="flex items-center gap-1 text-[12px]">
-                <span className="text-on-surface-variant">₹</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={priceOf(p)}
-                  onChange={(e) =>
-                    setPrices((prev) => ({ ...prev, [p.id]: Number(e.target.value) }))
-                  }
-                  aria-label={`Price for ${p.name}`}
-                  className="w-14 bg-transparent border-b border-outline-variant focus:border-primary outline-none text-on-surface"
-                />
-                <span className={left < 0 ? "text-error font-semibold" : "text-on-surface-variant"}>
-                  · {left} left{left < 0 ? " ⚠" : ""}
-                </span>
-              </div>
+              <p className="text-[13px] text-on-surface mt-1 leading-tight line-clamp-2">
+                {p.name}
+              </p>
+              <p className="text-[12px] text-on-surface-variant">
+                {formatPrice(p.priceCents, p.currency)}
+                {" · "}
+                {soldOut ? (
+                  <span className="text-error">none left</span>
+                ) : (
+                  <span className={atLimit ? "text-error" : undefined}>
+                    {left} left
+                  </span>
+                )}
+              </p>
+              {capped === p.id && (
+                <p className="text-[12px] text-error" role="status">
+                  Only {p.stockCount} in stock
+                </p>
+              )}
               {n > 0 && (
                 <button
                   type="button"
