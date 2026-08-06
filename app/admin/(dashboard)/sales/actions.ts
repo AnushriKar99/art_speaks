@@ -1,0 +1,61 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/server";
+
+export type SaleLine = {
+  productId: string;
+  quantity: number;
+  /** Rupees as typed on the form; converted to paise here. */
+  priceRupees: number;
+};
+
+export type SaleResult = { ok: true; orderId: string } | { ok: false; error: string };
+
+/**
+ * Records an in-person sale.
+ *
+ * Delegates to the record_offline_sale function (migration 0009) rather than
+ * inserting from here, so the order and its line items share one transaction.
+ * Two separate inserts could leave a sale with no items, or items whose stock
+ * was already deducted against an order that never landed.
+ */
+export async function recordOfflineSale(
+  lines: SaleLine[],
+  soldOn: string,
+): Promise<SaleResult> {
+  await requireAdmin();
+
+  const items = lines
+    .filter((l) => l.quantity > 0)
+    .map((l) => ({
+      product_id: l.productId,
+      quantity: Math.round(l.quantity),
+      unit_price_cents: Math.round(l.priceRupees * 100),
+    }));
+
+  if (items.length === 0) {
+    return { ok: false, error: "Tap at least one piece to record a sale." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("record_offline_sale", {
+    items,
+    sold_on: soldOn,
+  });
+
+  if (error) {
+    console.error("recordOfflineSale:", error.message);
+    return { ok: false, error: error.message };
+  }
+
+  // Stock changed, so anything showing a count is now stale.
+  revalidatePath("/admin/sales/new");
+  revalidatePath("/admin/inventory");
+  revalidatePath("/admin/sales");
+  revalidatePath("/shop");
+  revalidatePath("/");
+
+  return { ok: true, orderId: data as string };
+}

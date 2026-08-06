@@ -24,6 +24,8 @@ FILES=(
   supabase/migrations/0006_sales_schema.sql
   supabase/migrations/0007_products_in_rupees_view.sql
   supabase/migrations/0008_fuzzy_product_search.sql
+  supabase/migrations/0009_record_offline_sale.sql
+  supabase/migrations/0010_whatsapp_orders.sql
   supabase/seed_categories.sql
   supabase/seed_products_bookmarks.sql
 )
