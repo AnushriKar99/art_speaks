@@ -263,7 +263,66 @@ export async function searchProducts(rawQuery: string): Promise<Product[]> {
     console.error("searchProducts:", error.message);
     return [];
   }
-  return (data as unknown as ProductRow[]).map(toProduct);
+
+  const exact = (data as unknown as ProductRow[]).map(toProduct);
+  if (exact.length > 0) return exact;
+
+  // Nothing matched literally — try again allowing for typos. Ordered this way
+  // round because substring matching is better for the common case: typing
+  // "bow" should return every bow, not the three that score highest.
+  return searchProductsFuzzy(q);
+}
+
+/** Row shape returned by the search_products_fuzzy RPC (migration 0008). */
+type FuzzyRow = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  artisan_note: string | null;
+  price_cents: number;
+  currency: string;
+  stock_count: number;
+  images: string[] | null;
+  is_best_seller: boolean;
+  is_new_arrival: boolean;
+  category_slug: string | null;
+  score: number;
+};
+
+/**
+ * Typo-tolerant fallback, backed by pg_trgm (migration 0008). Scores how much
+ * three-character overlap a term shares with each product, so "strawbery"
+ * still finds "Strawberry Pin".
+ *
+ * Returns empty rather than throwing if the migration hasn't been applied —
+ * search degrades to substring-only instead of the page erroring.
+ */
+async function searchProductsFuzzy(term: string): Promise<Product[]> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase.rpc("search_products_fuzzy", {
+    search_term: term,
+  });
+
+  if (error) {
+    console.error("searchProductsFuzzy:", error.message);
+    return [];
+  }
+
+  return (data as FuzzyRow[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    priceCents: row.price_cents,
+    currency: row.currency,
+    description: row.description ?? "",
+    artisanNote: row.artisan_note ?? "",
+    stockCount: row.stock_count,
+    images: usableImages(row.images),
+    categorySlug: row.category_slug ?? "",
+    isBestSeller: row.is_best_seller,
+    isNewArrival: row.is_new_arrival,
+  }));
 }
 
 /**

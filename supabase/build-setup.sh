@@ -23,6 +23,7 @@ FILES=(
   supabase/migrations/0005_currency_inr.sql
   supabase/migrations/0006_sales_schema.sql
   supabase/migrations/0007_products_in_rupees_view.sql
+  supabase/migrations/0008_fuzzy_product_search.sql
   supabase/seed_categories.sql
   supabase/seed_products_bookmarks.sql
 )
