@@ -6,15 +6,15 @@ import { ProductGrid } from "@/components/product/product-grid";
 import { Icon } from "@/components/ui/icon";
 import { getCategories, getCollection } from "@/lib/data/products";
 
-type ShopSearchParams = Promise<{ collection?: string }>;
+type ShopSearchParams = Promise<{ collection?: string; q?: string }>;
 
 export async function generateMetadata({
   searchParams,
 }: {
   searchParams: ShopSearchParams;
 }): Promise<Metadata> {
-  const { collection } = await searchParams;
-  const { title } = await getCollection(collection);
+  const { collection, q } = await searchParams;
+  const { title } = await getCollection(collection, q);
   return {
     title: `Art Speaks | ${title}`,
     description: `Browse ${title} from the Art Speaks studio.`,
@@ -26,18 +26,18 @@ export default async function ShopPage({
 }: {
   searchParams: ShopSearchParams;
 }) {
-  const { collection: collectionSlug } = await searchParams;
+  const { collection: collectionSlug, q } = await searchParams;
 
   const [categories, view] = await Promise.all([
     getCategories(),
-    getCollection(collectionSlug),
+    getCollection(collectionSlug, q),
   ]);
 
   const { title: heading, eyebrow, products } = view;
 
   return (
     <>
-      <ShopHeader categories={categories} account={<AccountMenu />} />
+      <ShopHeader categories={categories} account={<AccountMenu />} query={q} />
       <main className="min-h-screen checkered-bg pb-32 relative">
         {/* Floating doodles */}
         <div

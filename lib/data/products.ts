@@ -213,6 +213,60 @@ export async function getNewArrivals(): Promise<Product[]> {
 }
 
 /**
+ * PostgREST builds its `or=(...)` filter from a comma-separated string, so a
+ * search term containing a comma, parenthesis or quote would break out of the
+ * value and corrupt the filter. `%` and `_` are LIKE wildcards and would make
+ * the search match far more than the visitor typed.
+ *
+ * Stripping them is safe here: none carry meaning in a product search.
+ */
+function sanitiseSearchTerm(raw: string): string {
+  return raw.trim().replace(/[,()"'%_\\*]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Free-text search across everything a visitor might reasonably type: the
+ * product name, its description, the artisan note, its slug, and its category
+ * name. Matching is case-insensitive and substring-based, so "bow" finds
+ * "Heart Bow Pin" and "gogh" would find a painting whose note mentions it.
+ *
+ * Category names are matched against the cached list rather than a join, which
+ * keeps this to a single round trip.
+ */
+export async function searchProducts(rawQuery: string): Promise<Product[]> {
+  const q = sanitiseSearchTerm(rawQuery);
+  if (!q) return [];
+
+  const categories = await loadCategories();
+  const matchingCategoryIds = categories
+    .filter((c) => c.name.toLowerCase().includes(q.toLowerCase()))
+    .map((c) => c.id);
+
+  const filters = [
+    `name.ilike.%${q}%`,
+    `description.ilike.%${q}%`,
+    `artisan_note.ilike.%${q}%`,
+    `slug.ilike.%${q}%`,
+  ];
+  if (matchingCategoryIds.length > 0) {
+    filters.push(`category_id.in.(${matchingCategoryIds.join(",")})`);
+  }
+
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_COLUMNS)
+    .or(filters.join(","))
+    .order("name");
+
+  if (error) {
+    console.error("searchProducts:", error.message);
+    return [];
+  }
+  return (data as unknown as ProductRow[]).map(toProduct);
+}
+
+/**
  * Wishlist needs persisted favourites, which the heart buttons don't write yet.
  * The `wishlist` table and its RLS exist; only the UI wiring is missing.
  */
@@ -257,7 +311,25 @@ const COLLECTION_TITLES: Record<string, string> = {
   wishlist: "Wishlist",
 };
 
-export async function getCollection(slug?: string): Promise<CollectionView> {
+export async function getCollection(
+  slug?: string,
+  query?: string,
+): Promise<CollectionView> {
+  // A search term wins over any collection filter — someone who has typed into
+  // the search box is looking across the whole shop, not within a category.
+  const q = query?.trim();
+  if (q) {
+    const products = await searchProducts(q);
+    return {
+      title: `“${q}”`,
+      eyebrow:
+        products.length === 0
+          ? "No matches"
+          : `${products.length} ${products.length === 1 ? "match" : "matches"}`,
+      products,
+    };
+  }
+
   if (!slug) {
     return {
       title: "All Items",

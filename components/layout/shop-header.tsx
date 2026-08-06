@@ -10,13 +10,18 @@ import type { Category } from "@/lib/types";
 export function ShopHeader({
   categories,
   account,
+  query,
 }: {
   categories: Category[];
   /** <AccountMenu /> — a Server Component, so it arrives as a prop. */
   account?: React.ReactNode;
+  /** Current `?q=`, so the box still shows what was searched for. */
+  query?: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  // Open by default when there's an active search, so the term stays visible
+  // rather than the results looking like an unexplained filter.
+  const [searchOpen, setSearchOpen] = useState(Boolean(query));
   const pathname = usePathname();
   const isCartPage = pathname === "/cart";
 
@@ -66,13 +71,27 @@ export function ShopHeader({
 
         {searchOpen ? (
           <div className="px-margin-mobile pb-3 max-w-container-max mx-auto">
-            {/* Search is not wired to filtering yet. */}
-            <input
-              type="search"
-              autoFocus
-              placeholder="Search the shop…"
-              className="w-full bg-white border-2 border-candy-pink/20 rounded-full py-3 px-5 outline-none focus:border-primary text-body-md shadow-sm"
-            />
+            {/* A plain GET form, so the term lands in the URL as ?q=. That
+                makes results shareable and bookmarkable, keeps the back button
+                honest, and means search works before any JavaScript loads. */}
+            <form action="/shop" method="get" className="relative">
+              <input
+                type="search"
+                name="q"
+                defaultValue={query ?? ""}
+                autoFocus
+                placeholder="Search the shop…"
+                aria-label="Search products"
+                className="w-full bg-white border-2 border-candy-pink/20 rounded-full py-3 pl-5 pr-12 outline-none focus:border-primary text-body-md shadow-sm"
+              />
+              <button
+                type="submit"
+                aria-label="Search"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-primary hover:scale-110 transition-transform active:scale-95 p-2"
+              >
+                <Icon name="search" />
+              </button>
+            </form>
           </div>
         ) : null}
       </header>
