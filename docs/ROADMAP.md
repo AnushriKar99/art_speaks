@@ -101,9 +101,10 @@ unset until then.
 
 | Item | Notes |
 | --- | --- |
+| Add-to-cart animation | The item should visibly fly into the basket when added, rather than only the header count changing. Purely presentational — the cart itself works. |
 | Wishlist persistence | `getWishlist()` returns `[]`; every heart button is a stub. The `wishlist` table and its RLS already exist, unused. First thing a customer account is actually for. |
-| Storefront search | The header magnifier opens a text box that filters nothing. |
-| Real product photography | Every image is hotlinked from `lh3.googleusercontent.com` — Stitch export URLs that will eventually stop resolving. Phase 3 supplies the upload path; the photos are yours to take. |
+| ~~Storefront search~~ | **Done** — substring match across name, description, artisan note, slug and category, with pg_trgm typo tolerance as a fallback. |
+| Category images | The 8 product photos are uploaded and served from Supabase Storage. Categories still share one hotlinked Stitch placeholder (`image_url` is null on all 8). |
 | Logo image in the hero | Requested 2026-07-20, asset never supplied. |
 | Custom order section image | `FORM_IMAGE` in `custom-order-form.tsx` is a placeholder. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
