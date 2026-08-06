@@ -90,3 +90,103 @@ export async function getAdminProductBySlug(
   }
   return data ? toAdminProduct(data as unknown as AdminProductRow) : null;
 }
+
+/* ------------------------------------------------------------------ orders */
+
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
+
+export interface AdminOrderLine {
+  id: string;
+  productId: string | null;
+  productName: string;
+  unitPriceCents: number;
+  quantity: number;
+  /** Current stock of that product, so overselling is visible before confirming. */
+  stockCount: number | null;
+}
+
+export interface AdminOrder {
+  id: string;
+  orderNumber: number;
+  channel: "online" | "offline" | "whatsapp";
+  status: OrderStatus;
+  customerName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  address: Record<string, string> | null;
+  totalCents: number;
+  currency: string;
+  stockDeductedAt: string | null;
+  createdAt: string;
+  lines: AdminOrderLine[];
+}
+
+type OrderRow = {
+  id: string;
+  order_number: number;
+  channel: AdminOrder["channel"];
+  status: OrderStatus;
+  contact_phone: string | null;
+  contact_email: string | null;
+  shipping_address: Record<string, string> | null;
+  total_cents: number;
+  currency: string;
+  stock_deducted_at: string | null;
+  created_at: string;
+  order_items: {
+    id: string;
+    product_id: string | null;
+    product_name: string;
+    unit_price_cents: number;
+    quantity: number;
+    products: { stock_count: number } | null;
+  }[];
+};
+
+/**
+ * Every order, newest first, with its line items and each product's current
+ * stock. Uses the admin's session, so the RLS policies from 0003 authorise it.
+ */
+export async function getAdminOrders(): Promise<AdminOrder[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, total_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, products(stock_count))",
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getAdminOrders:", error.message);
+    return [];
+  }
+
+  return (data as unknown as OrderRow[]).map((o) => ({
+    id: o.id,
+    orderNumber: o.order_number,
+    channel: o.channel,
+    status: o.status,
+    // The name is stored inside the address blob — see place_whatsapp_order.
+    customerName: o.shipping_address?.name ?? null,
+    contactPhone: o.contact_phone,
+    contactEmail: o.contact_email,
+    address: o.shipping_address,
+    totalCents: o.total_cents,
+    currency: o.currency,
+    stockDeductedAt: o.stock_deducted_at,
+    createdAt: o.created_at,
+    lines: (o.order_items ?? []).map((l) => ({
+      id: l.id,
+      productId: l.product_id,
+      productName: l.product_name,
+      unitPriceCents: l.unit_price_cents,
+      quantity: l.quantity,
+      stockCount: l.products?.stock_count ?? null,
+    })),
+  }));
+}
