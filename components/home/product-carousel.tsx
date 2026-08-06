@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { ProductModal } from "@/components/product/product-modal";
+import { useCart } from "@/lib/cart/cart-store";
 
 type Variant = "bestseller" | "arrival";
 
@@ -123,6 +124,7 @@ function BestSellerCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
+  const { add } = useCart();
   return (
     <div
       className="min-w-[260px] group cursor-pointer block"
@@ -155,8 +157,9 @@ function BestSellerCard({
         </button>
         <button
           onClick={(e) => {
-            // Add-to-cart is a stub for now — no cart persistence yet.
+            // Stop the click reaching the card, which opens the modal.
             e.stopPropagation();
+            add(product.id);
           }}
           className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary shadow-[4px_4px_0px_#864d61] hover:translate-y-[-2px] transition-all z-10"
           aria-label={`Add ${product.name} to cart`}
@@ -183,6 +186,7 @@ function ArrivalCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
+  const { add } = useCart();
   return (
     <div
       className="min-w-[220px] group cursor-pointer block"
@@ -215,8 +219,9 @@ function ArrivalCard({
         </button>
         <button
           onClick={(e) => {
-            // Add-to-cart is a stub for now — no cart persistence yet.
+            // Stop the click reaching the card, which opens the modal.
             e.stopPropagation();
+            add(product.id);
           }}
           className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary shadow-[4px_4px_0px_#864d61] hover:translate-y-[-2px] transition-all z-10"
           aria-label={`Add ${product.name} to cart`}
