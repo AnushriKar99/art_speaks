@@ -1,14 +1,32 @@
-import { NotBuiltYet } from "@/components/admin/not-built-yet";
+import { getAdminProducts } from "@/lib/data/admin";
+import { OfflineSaleForm } from "@/components/admin/offline-sale-form";
+import { Icon } from "@/components/ui/icon";
 
 export const metadata = { title: "Art Speaks | Record sale" };
 
-export default function RecordSalePage() {
+export default async function RecordSalePage() {
+  // Listed pieces only — an unpublished draft isn't something sold at a stall.
+  const products = (await getAdminProducts()).filter((p) => p.isActive);
+
   return (
-    <NotBuiltYet
-      icon="point_of_sale"
-      title="Record sale"
-      summary="Tap the pieces that sold in person. Stock comes down automatically."
-      phase="Phase 4"
-    />
+    <>
+      <h1 className="font-headline-md text-headline-lg text-primary mb-1">
+        Record sale
+      </h1>
+      <p className="text-body-md text-on-surface-variant mb-5">
+        Tap what sold. Tap again for two. Stock comes down when you save.
+      </p>
+
+      {products.length === 0 ? (
+        <div className="rounded-[2rem] border-2 border-dashed border-outline-variant bg-surface-container-low/60 p-10 text-center">
+          <Icon name="point_of_sale" className="text-[40px] text-outline" />
+          <p className="text-body-md text-on-surface-variant mt-3">
+            Nothing listed to sell yet. Add pieces in Inventory first.
+          </p>
+        </div>
+      ) : (
+        <OfflineSaleForm products={products} />
+      )}
+    </>
   );
 }
