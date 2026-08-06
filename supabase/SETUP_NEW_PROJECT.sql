@@ -1049,8 +1049,9 @@ create policy "admins delete order items"
 -- Idempotent: safe to run more than once.
 -- ============================================================
 
--- Ceilings, so a crafted request cannot ask for an absurd amount.
--- MAX_LINES also bounds how much work one call can cause.
+-- Quantities are bounded by real stock, not an arbitrary ceiling: you cannot
+-- order more of something than exists. max_lines separately bounds how much
+-- work a single call can cause.
 create or replace function public.place_whatsapp_order(
   items         jsonb,
   customer_name text,
@@ -1065,10 +1066,12 @@ set search_path = public
 as $$
 declare
   max_lines    constant int := 50;
-  max_per_line constant int := 20;
   new_order_id uuid;
   computed     int;
   line_count   int;
+  short_name   text;
+  short_have   int;
+  short_want   int;
 begin
   -- ---------- shape ----------
   if items is null or jsonb_typeof(items) <> 'array' then
@@ -1095,30 +1098,48 @@ begin
 
   -- ---------- resolve the basket ----------
   -- Joined against products, so an id that does not exist, or a piece that is
-  -- not listed, simply is not part of the order. Quantities are clamped rather
-  -- than trusted.
+  -- not listed or has nothing left, simply is not part of the order. The price
+  -- is taken from the row, never from the caller.
   create temporary table if not exists _basket (
     product_id uuid,
     name text,
     unit_price_cents int,
-    quantity int
+    quantity int,
+    stock_count int
   ) on commit drop;
   delete from _basket;
 
-  insert into _basket (product_id, name, unit_price_cents, quantity)
+  insert into _basket (product_id, name, unit_price_cents, quantity, stock_count)
   select
     p.id,
     p.name,
-    p.price_cents,                                   -- from the database, never the caller
-    least(greatest((i->>'quantity')::int, 1), max_per_line)
+    p.price_cents,
+    greatest((i->>'quantity')::int, 1),
+    p.stock_count
   from jsonb_array_elements(items) i
   join public.products p
     on p.id = (i->>'product_id')::uuid
    and p.is_active
+   and p.stock_count > 0
   where (i->>'quantity')::int > 0;
 
   if not exists (select 1 from _basket) then
     raise exception 'None of those pieces are available';
+  end if;
+
+  -- ---------- nobody may order more than exists ----------
+  -- Named rather than silently reduced: quietly shipping two when someone
+  -- asked for five is a worse surprise than being told to adjust the basket.
+  select name, stock_count, quantity
+    into short_name, short_have, short_want
+    from _basket
+   where quantity > stock_count
+   order by name
+   limit 1;
+
+  if short_name is not null then
+    raise exception 'Only % of "%" left — you asked for %',
+      short_have, short_name, short_want;
   end if;
 
   select sum(unit_price_cents * quantity) into computed from _basket;
