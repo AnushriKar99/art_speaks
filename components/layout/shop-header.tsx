@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { DesktopNav, MobileNav } from "@/components/layout/header-nav";
 import type { Category } from "@/lib/types";
@@ -11,14 +11,25 @@ export function ShopHeader({
   categories,
   account,
   query,
+  collection,
 }: {
   categories: Category[];
   /** <AccountMenu /> — a Server Component, so it arrives as a prop. */
   account?: React.ReactNode;
   /** Current `?q=`, so the box still shows what was searched for. */
   query?: string;
+  /** Current `?collection=`, so clearing a search returns here, not to All Items. */
+  collection?: string;
 }) {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Clearing a search should put you back where you were browsing. Dropping
+  // someone from "Bookmarks" to "All Items" because they emptied the search box
+  // silently discards a filter they never touched.
+  const clearedHref = collection
+    ? `/shop?collection=${encodeURIComponent(collection)}`
+    : "/shop";
   // Open by default when there's an active search, so the term stays visible
   // rather than the results looking like an unexplained filter.
   const [searchOpen, setSearchOpen] = useState(Boolean(query));
@@ -82,8 +93,28 @@ export function ShopHeader({
                 autoFocus
                 placeholder="Search the shop…"
                 aria-label="Search products"
-                className="w-full bg-white border-2 border-candy-pink/20 rounded-full py-3 pl-5 pr-12 outline-none focus:border-primary text-body-md shadow-sm"
+                // Emptying the box drops the filter straight away, rather than
+                // leaving stale results on screen until you press Enter. Fires
+                // for the native ✕ in the search input as well as for deleting
+                // by hand.
+                onInput={(e) => {
+                  if (query && e.currentTarget.value === "") {
+                    router.push(clearedHref);
+                  }
+                }}
+                className="w-full bg-white border-2 border-candy-pink/20 rounded-full py-3 pl-5 pr-20 outline-none focus:border-primary text-body-md shadow-sm"
               />
+              {query ? (
+                // Firefox draws no native clear control, and on mobile the
+                // native one is easy to miss — so provide our own.
+                <Link
+                  href={clearedHref}
+                  aria-label="Clear search"
+                  className="absolute right-11 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors p-2"
+                >
+                  <Icon name="close" className="text-[20px]" />
+                </Link>
+              ) : null}
               <button
                 type="submit"
                 aria-label="Search"

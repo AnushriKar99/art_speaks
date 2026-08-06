@@ -37,7 +37,12 @@ export default async function ShopPage({
 
   return (
     <>
-      <ShopHeader categories={categories} account={<AccountMenu />} query={q} />
+      <ShopHeader
+          categories={categories}
+          account={<AccountMenu />}
+          query={q}
+          collection={collectionSlug}
+        />
       <main className="min-h-screen checkered-bg pb-32 relative">
         {/* Floating doodles */}
         <div
