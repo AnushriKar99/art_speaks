@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { DesktopNav, MobileNav } from "@/components/layout/header-nav";
 import type { Category } from "@/lib/types";
+import { CartBadge } from "@/components/cart/cart-badge";
 
 const LOGO_SRC =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCTyXoVuqkhtjFdw_3_hIVL_LtHaCvoy8wblFrWSVqK-n_C0rk4zIwcUNM5bZEnuAUTCXRq3T2wjrSD5CnoxIAvUePVmCLxv9rRSPr3aSXU9YvJPOPlyajwH1CUOKgs1y1-B-iZp0tED4UVsuEapkAAODGGzb_kE1Bv_9HQ_GuGpJgIJbEhGcjJze4r4gEyOB_-mWS1G0DFHBFw-nO0i8sRopGKZKE-t7DpOYHhbShTlxGQLBuLqotrNcAYs7YaWQXUdcA";
@@ -61,9 +62,7 @@ export function SiteHeader({
               aria-label="Cart"
             >
               <Icon name="shopping_bag" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-candy-pink text-on-primary-container text-[10px] flex items-center justify-center rounded-full font-bold">
-                2
-              </span>
+              <CartBadge />
             </Link>
             {account}
           </div>

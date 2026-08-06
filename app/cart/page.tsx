@@ -4,7 +4,6 @@ import { AccountMenu } from "@/components/layout/account-menu";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { CartView } from "@/components/cart/cart-view";
 import { Icon } from "@/components/ui/icon";
-import { getCartItems } from "@/lib/data/cart";
 import { getCategories } from "@/lib/data/products";
 
 export const metadata: Metadata = {
@@ -13,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CartPage() {
-  const [items, categories] = await Promise.all([getCartItems(), getCategories()]);
+  const categories = await getCategories();
 
   return (
     <>
@@ -43,7 +42,7 @@ export default async function CartPage() {
           <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg text-primary italic mb-6">
             Your Basket
           </h2>
-          <CartView initialItems={items} />
+          <CartView />
         </section>
       </main>
       <BottomTabBar />

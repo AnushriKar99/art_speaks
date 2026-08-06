@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fredoka, Be_Vietnam_Pro, Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
+import { CartProvider } from "@/lib/cart/cart-store";
 
 const fredoka = Fredoka({
   variable: "--font-fredoka",
@@ -48,7 +49,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-background text-on-background font-body-md relative overflow-x-hidden">
-        {children}
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );

@@ -5,6 +5,7 @@ import { ProductImage } from "@/components/ui/product-image";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
+import { useCart } from "@/lib/cart/cart-store";
 
 export function ProductModal({
   product,
@@ -26,6 +27,7 @@ function ProductModalContent({
   product: Product;
   onClose: () => void;
 }) {
+  const { add } = useCart();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
 
@@ -157,7 +159,8 @@ function ProductModalContent({
           </div>
           <button
             onClick={() => {
-              // Add-to-cart stub — no cart persistence yet.
+              add(product.id, qty);
+              onClose();
             }}
             className="flex-1 bg-candy-pink text-primary font-display-lg-mobile text-[20px] py-4 rounded-xl shadow-[4px_4px_0px_#864d61] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3"
           >

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { DesktopNav, MobileNav } from "@/components/layout/header-nav";
 import type { Category } from "@/lib/types";
+import { CartBadge } from "@/components/cart/cart-badge";
 
 export function ShopHeader({
   categories,
@@ -71,9 +72,7 @@ export function ShopHeader({
                 aria-label="Cart"
               >
                 <Icon name="shopping_bag" />
-                <span className="absolute -top-1 -right-1 bg-candy-pink text-[10px] w-4 h-4 flex items-center justify-center rounded-full text-on-primary-container font-bold">
-                  2
-                </span>
+                <CartBadge />
               </Link>
             )}
             {account}

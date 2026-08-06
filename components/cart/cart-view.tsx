@@ -1,35 +1,105 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
-import type { CartItem } from "@/lib/data/cart";
-import { formatPrice } from "@/lib/types";
+import { useCart } from "@/lib/cart/cart-store";
+import { createClient } from "@/lib/supabase/client";
+import { formatPrice, type Product } from "@/lib/types";
+
+type Row = {
+  id: string;
+  slug: string;
+  name: string;
+  price_cents: number;
+  currency: string;
+  stock_count: number;
+  images: string[] | null;
+};
 
 /**
- * Client-side view of the basket. Quantity/remove act on local state only —
- * persistence and checkout land with the cart backend + Stripe.
+ * The basket.
+ *
+ * The cart itself only remembers product ids and quantities; names, prices and
+ * photos are fetched fresh here. A cart that cached prices would show — and
+ * eventually charge — whatever something cost the day it was added.
  */
-export function CartView({ initialItems }: { initialItems: CartItem[] }) {
-  const [items, setItems] = useState(initialItems);
+export function CartView() {
+  const { lines, count, setQuantity, remove } = useCart();
+  const [products, setProducts] = useState<Record<string, Product>>({});
+  const [loaded, setLoaded] = useState(false);
 
-  const changeQuantity = (id: string, delta: number) =>
-    setItems((prev) =>
-      prev.map((item) =>
-        item.product.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item,
-      ),
-    );
+  const ids = lines.map((l) => l.productId).sort().join(",");
 
-  const removeItem = (id: string) =>
-    setItems((prev) => prev.filter((item) => item.product.id !== id));
+  useEffect(() => {
+    let cancelled = false;
+    // Every setState below happens after an await, never synchronously in the
+    // effect body — otherwise React warns about cascading renders.
+    (async () => {
+      if (!ids) {
+        if (!cancelled) {
+          setProducts({});
+          setLoaded(true);
+        }
+        return;
+      }
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("products")
+        .select("id, slug, name, price_cents, currency, stock_count, images")
+        .in("id", ids.split(","));
+      if (cancelled) return;
+      const map: Record<string, Product> = {};
+      for (const r of (data ?? []) as Row[]) {
+        map[r.id] = {
+          id: r.id,
+          slug: r.slug,
+          name: r.name,
+          priceCents: r.price_cents,
+          currency: r.currency,
+          stockCount: r.stock_count,
+          images: r.images ?? [],
+          description: "",
+          artisanNote: "",
+          categorySlug: "",
+          isBestSeller: false,
+          isNewArrival: false,
+        };
+      }
+      setProducts(map);
+      setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ids]);
+
+  // Only lines whose product still resolves. A piece delisted since it was
+  // added simply drops out rather than rendering as a blank row.
+  const items = lines
+    .map((l) => ({ product: products[l.productId], quantity: l.quantity }))
+    .filter((i): i is { product: Product; quantity: number } => Boolean(i.product));
+
+  const changeQuantity = (id: string, delta: number) => {
+    const line = lines.find((l) => l.productId === id);
+    if (line) setQuantity(id, Math.max(1, line.quantity + delta));
+  };
+
+  const removeItem = (id: string) => remove(id);
 
   const subtotalCents = items.reduce(
     (sum, item) => sum + item.product.priceCents * item.quantity,
     0,
   );
+
+  if (!loaded && count > 0) {
+    return (
+      <p className="text-center py-20 text-body-md text-on-surface-variant">
+        Loading your basket…
+      </p>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -124,7 +194,7 @@ export function CartView({ initialItems }: { initialItems: CartItem[] }) {
                 Shipping
               </span>
               <span className="text-primary italic">
-                Calculated at next step
+                Confirmed over WhatsApp
               </span>
             </div>
           </div>
@@ -136,13 +206,15 @@ export function CartView({ initialItems }: { initialItems: CartItem[] }) {
               {formatPrice(subtotalCents)}
             </span>
           </div>
-          {/* Checkout is not wired up yet (no cart backend / Stripe). */}
-          <button className="w-full bg-candy-pink text-on-primary-container font-headline-md text-body-lg py-4 rounded-full candy-shadow hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2">
-            Proceed to Checkout
+          <Link
+            href="/checkout"
+            className="w-full bg-candy-pink text-on-primary-container font-headline-md text-body-lg py-4 rounded-full candy-shadow hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            Place order
             <Icon name="arrow_forward" />
-          </button>
+          </Link>
           <p className="text-center font-label-caps text-secondary text-xs mt-4">
-            * Final taxes calculated during secure checkout
+            You will confirm the order over WhatsApp
           </p>
         </div>
       </section>

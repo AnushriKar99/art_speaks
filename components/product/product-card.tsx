@@ -4,6 +4,7 @@ import { ProductImage } from "@/components/ui/product-image";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
+import { useCart } from "@/lib/cart/cart-store";
 
 export function ProductCard({
   product,
@@ -12,6 +13,7 @@ export function ProductCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
+  const { add } = useCart();
   return (
     <div
       className="group cursor-pointer"
@@ -34,8 +36,9 @@ export function ProductCard({
         />
         <button
           onClick={(e) => {
-            // Add-to-cart stub — no cart persistence yet.
+            // Stop the click reaching the card, which opens the modal.
             e.stopPropagation();
+            add(product.id);
           }}
           className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary shadow-[4px_4px_0px_#864d61] hover:translate-y-[-2px] transition-all"
           aria-label={`Add ${product.name} to cart`}
