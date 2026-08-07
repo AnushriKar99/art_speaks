@@ -106,7 +106,7 @@ unset until then.
 | ~~Storefront search~~ | **Done** — substring match across name, description, artisan note, slug and category, with pg_trgm typo tolerance as a fallback. |
 | Category images | The 8 product photos are uploaded and served from Supabase Storage. Categories still share one hotlinked Stitch placeholder (`image_url` is null on all 8). |
 | Logo image in the hero | Requested 2026-07-20, asset never supplied. |
-| Custom order section image | `FORM_IMAGE` in `custom-order-form.tsx` is a placeholder. |
+| ~~Custom order section image~~ | **Done** — a real studio flat-lay, served from `public/images/`. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
 | **No test suite** | Nothing is covered. Worth adding around the money paths — stock decrement, order totals — before payment ships. |
 

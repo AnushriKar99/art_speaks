@@ -5,8 +5,9 @@ import Image from "next/image";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { buildWhatsAppLink } from "@/lib/contact";
 
-const FORM_IMAGE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuD5gH9anw7guM28PHpEmr9urL_8EJCoflT5JvH7I75AmUD0_h_mGyBg0pHAhSXtvOjAovIwMItxrh4uvdEm_xLIPYOhTHmyNudcjdsxvqDNhqVViqgtENw_cTMenDTa6MPACt0ktzfnAFrkegcdXZn7VIWDmLeMx5cpPO6idi2OxnbXmzM2Os-QbamhIMNIo5aoUnixrRFuWR9oh_zUXG0-BfvjznugLzLZFMe3VZxQ-q-ib3jA2YjGqw";
+/** The studio desk. Served from the repo rather than Storage — it is site
+ *  chrome, not product data, so it belongs with the code that renders it. */
+const FORM_IMAGE = "/images/custom-order.jpg";
 
 export function CustomOrderForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -32,9 +33,9 @@ export function CustomOrderForm() {
             <Image
               className="rounded-[2.5rem] w-full h-56 object-cover border-4 border-white shadow-lg"
               src={FORM_IMAGE}
-              alt="Custom handcrafted pieces"
-              width={500}
-              height={224}
+              alt="The studio desk — gouache, brush pens, framed paintings and stickers mid-project"
+              width={1400}
+              height={782}
             />
           </div>
         </div>
