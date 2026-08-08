@@ -29,11 +29,14 @@ export function CustomOrderForm() {
             for your loved ones or something special for yourself, let&apos;s
             create something together.
           </p>
-          <div className="hidden md:block">
+          <div>
+            {/* Shorter on a phone: at full height the photo pushes the form
+                itself below the fold, and the form is what this section is for. */}
             <Image
-              className="rounded-[2.5rem] w-full h-56 object-cover border-4 border-white shadow-lg"
+              className="rounded-[2rem] md:rounded-[2.5rem] w-full h-40 md:h-56 object-cover border-4 border-white shadow-lg"
               src={FORM_IMAGE}
               alt="The studio desk — gouache, brush pens, framed paintings and stickers mid-project"
+              sizes="(min-width: 768px) 32rem, 100vw"
               width={1400}
               height={782}
             />
