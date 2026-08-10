@@ -5,6 +5,8 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ProductGrid } from "@/components/product/product-grid";
 import { Icon } from "@/components/ui/icon";
 import { getCategories, getCollection } from "@/lib/data/products";
+import { EmptyCollection } from "@/components/product/empty-collection";
+import { createClient } from "@/lib/supabase/server";
 
 type ShopSearchParams = Promise<{ collection?: string; q?: string }>;
 
@@ -28,10 +30,13 @@ export default async function ShopPage({
 }) {
   const { collection: collectionSlug, q } = await searchParams;
 
-  const [categories, view] = await Promise.all([
+  const supabase = await createClient();
+  const [categories, view, auth] = await Promise.all([
     getCategories(),
     getCollection(collectionSlug, q),
+    supabase.auth.getUser(),
   ]);
+  const signedIn = Boolean(auth.data.user);
 
   const { title: heading, eyebrow, products } = view;
 
@@ -77,12 +82,11 @@ export default async function ShopPage({
           {products.length > 0 ? (
             <ProductGrid products={products} />
           ) : (
-            <div className="text-center py-20">
-              <Icon name="sentiment_dissatisfied" className="text-6xl text-primary/40" />
-              <p className="mt-4 text-body-lg text-on-surface-variant font-medium">
-                No pieces in this category yet — check back soon!
-              </p>
-            </div>
+            <EmptyCollection
+              collection={collectionSlug}
+              query={q}
+              signedIn={signedIn}
+            />
           )}
         </section>
       </main>
