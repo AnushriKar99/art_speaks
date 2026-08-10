@@ -61,10 +61,18 @@ export default async function AboutPage() {
             <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg text-primary italic mb-5 leading-tight">
               Our Story
             </h2>
-            <p className="text-body-lg text-on-surface-variant font-medium leading-relaxed">
-              Art Speaks is a tiny handcrafted studio making small objects with
-              big feelings — phone charms, worry stones, bookmarks, and custom
-              pieces, each one made to carry a little story of its own.
+            <p className="text-body-lg text-on-surface-variant font-medium leading-relaxed mb-4">
+              Art Speaks is a tiny studio (basically a bedroom) where we create a
+              little bit of everything — from phone charms and worry stones to
+              embroidery and paintings.
+            </p>
+            <p className="text-body-md text-on-surface-variant leading-relaxed mb-4">
+              Everything is handcrafted here, with lots of love (and probably a
+              little chaos), from the products themselves to the packaging they
+              arrive in.
+            </p>
+            <p className="text-body-md text-on-surface-variant leading-relaxed">
+              It&apos;s small, it&apos;s personal, and it&apos;s very much us.
             </p>
           </div>
           <div className="order-1 md:order-2 flex justify-center">
