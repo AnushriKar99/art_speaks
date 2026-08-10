@@ -80,7 +80,7 @@ export default async function AboutPage() {
               <div className="aspect-[3/4] rounded-[5rem] overflow-hidden shadow-2xl border-[8px] border-white ring-4 ring-candy-pink/10 relative rotate-[2deg]">
                 <Image
                   src="/images/journey.png"
-                  alt="The artist at work in the studio"
+                  alt="The maker of Art Speaks holding a basket of packaged pieces, framed by hand-drawn stars and swirls"
                   fill
                   sizes="(min-width: 768px) 24rem, 100vw"
                   className="object-cover"
