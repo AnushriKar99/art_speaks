@@ -104,5 +104,10 @@ and waiting.
 - Category CRUD in the admin panel — the 8 categories cover the range and change
   once or twice a year; adding one is a single SQL statement. Note that a SQL
   edit takes up to an hour to appear, since categories are cached.
+- Customer-facing order history (decided 2026-08-10). Ordering works without an
+  account, so there is little to show most buyers. This also rules out
+  customer-written reviews: place_whatsapp_order never sets customer_id, and the
+  "can review own order" policy from 0001 requires it — so the review table
+  stays unused and the homepage shows screenshots instead.
 - Offline refunds and returns.
 - Audit logging of admin changes — one admin, not yet worth it.
