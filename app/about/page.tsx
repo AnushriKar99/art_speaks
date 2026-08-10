@@ -77,7 +77,7 @@ export default async function AboutPage() {
           </div>
           <div className="order-1 md:order-2 flex justify-center">
             <div className="relative w-full max-w-sm">
-              <div className="aspect-[3/4] rounded-[5rem] overflow-hidden shadow-2xl border-[8px] border-white ring-4 ring-candy-pink/10 relative rotate-[2deg] kawaii-float">
+              <div className="aspect-[3/4] rounded-[5rem] overflow-hidden shadow-2xl border-[8px] border-white ring-4 ring-candy-pink/10 relative rotate-[2deg]">
                 <Image
                   src="/images/journey.png"
                   alt="The artist at work in the studio"
@@ -87,8 +87,13 @@ export default async function AboutPage() {
                   priority
                 />
               </div>
-              <div className="absolute -bottom-8 -right-4 w-32 h-32 bg-candy-pink rounded-full flex items-center justify-center p-6 text-center text-on-primary-container text-[11px] font-black uppercase rotate-12 shadow-xl border-4 border-white">
-                Handmade with soul
+              {/* The float lives on a wrapper rather than the sticker itself:
+                  the animation sets `transform` outright, which would wipe out
+                  the sticker's rotation if they shared an element. */}
+              <div className="absolute -bottom-8 -right-4 kawaii-float">
+                <div className="w-32 h-32 bg-candy-pink rounded-full flex items-center justify-center p-6 text-center text-on-primary-container text-[11px] font-black uppercase rotate-12 shadow-xl border-4 border-white">
+                  Handmade with soul
+                </div>
               </div>
             </div>
           </div>
