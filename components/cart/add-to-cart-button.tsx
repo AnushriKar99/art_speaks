@@ -7,8 +7,8 @@ import { Icon } from "@/components/ui/icon";
  * The cart control on a product card.
  *
  * Starts as a single icon button. Once the piece is in the basket it becomes a
- * count with a + beside it, so the card itself answers "how many of these have
- * I already added?" — otherwise the only feedback is the header badge, which
+ * − count + stepper, so the card itself answers "how many of these have I
+ * already added?" — otherwise the only feedback is the header badge, which
  * says nothing about *this* product.
  *
  * Stops at the stock count: the checkout function refuses an order for more
@@ -29,7 +29,7 @@ export function AddToCartButton({
   size?: string;
   className?: string;
 }) {
-  const { lines, add } = useCart();
+  const { lines, add, setQuantity } = useCart();
   const quantity = lines.find((l) => l.productId === productId)?.quantity ?? 0;
 
   const shell =
@@ -62,10 +62,28 @@ export function AddToCartButton({
       // The click that opens the product modal lives on the card behind this,
       // so every interaction in here has to stop propagating.
       onClick={(e) => e.stopPropagation()}
-      className={`${shell} ${className} h-10 pl-3 pr-1 gap-2`}
+      className={`${shell} ${className} h-10 px-1 gap-1`}
     >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setQuantity(productId, quantity - 1);
+        }}
+        // At one, this empties the line rather than decrementing to zero — so
+        // the control returns to the plain cart icon and the card looks
+        // untouched again.
+        aria-label={
+          quantity === 1
+            ? `Remove ${productName} from cart`
+            : `One fewer ${productName}`
+        }
+        className="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-surface-container-high transition-colors"
+      >
+        <Icon name={quantity === 1 ? "delete" : "remove"} className="text-[20px]" />
+      </button>
       <span
-        className="font-headline-md text-body-md leading-none"
+        className="font-headline-md text-body-md leading-none min-w-4 text-center"
         aria-label={`${quantity} in cart`}
       >
         {quantity}
