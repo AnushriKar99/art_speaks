@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -35,6 +36,7 @@ type WishlistValue = {
 const WishlistContext = createContext<WishlistValue | null>(null);
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [ids, setIds] = useState<Set<string>>(new Set());
   const [ready, setReady] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -117,11 +119,27 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
           else next.delete(productId);
           return next;
         });
+        return true;
       }
+
+      // The saved-pieces list is server-rendered, so unfilling a heart there
+      // would otherwise leave the card on screen. Refresh only on that page —
+      // anywhere else the product should stay visible, and a refetch would be
+      // a wasted round trip.
+      //
+      // Read from location rather than useSearchParams: this provider wraps
+      // the whole app, and subscribing to search params at render time forces
+      // every page behind a Suspense boundary. Here it is a one-off lookup
+      // inside an event handler, which costs nothing.
+      const onWishlistPage =
+        window.location.pathname === "/shop" &&
+        new URLSearchParams(window.location.search).get("collection") ===
+          "wishlist";
+      if (onWishlistPage) router.refresh();
 
       return true;
     },
-    [ids, userId],
+    [ids, userId, router],
   );
 
   const value = useMemo<WishlistValue>(
