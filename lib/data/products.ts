@@ -20,10 +20,6 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
  * place that gap is bridged.
  */
 
-/** Shown until a category has real photography. */
-const CATEGORY_PLACEHOLDER_IMAGE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDKooxAAp8WiC8rTU_TiFkw3Q3nrLdCBRVPYjh2EFCsf35WHNP7KhPFXR-mEwI1OurnjeuWQradKrXNmYC6x3cKvFeNAI9oCGSE_o9uXWqwePWm5QU2N9W4jsGgY9Warmnyx41UYvwbR4yCwqv7koBM4Nhb6_i1fSdvcLW9oDW-tle0BjVsjD_RVPfKF8d_pOVBA784qPGSDAJTjhgplxnljpy_cILywjwUAhiv4uo8hRB1emoO10-0LQ";
-
 /** Fallback accent so a category with no colour set still renders sensibly. */
 const DEFAULT_ACCENT = "#FFB7CE";
 
@@ -63,7 +59,9 @@ function toCategory(row: CategoryRow): Category {
     // The schema has no separate shadow colour; the design uses the accent for
     // both the border and the offset shadow.
     shadowColor: row.accent_color ?? DEFAULT_ACCENT,
-    image: row.image_url ?? CATEGORY_PLACEHOLDER_IMAGE,
+    // Left null on purpose — the card shows a 'coming soon' tile rather
+    // than borrowing another category's photo.
+    image: row.image_url,
   };
 }
 

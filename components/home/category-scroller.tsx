@@ -61,13 +61,28 @@ export function CategoryScroller({ categories }: { categories: Category[] }) {
                 boxShadow: `6px 6px 0px ${category.shadowColor}`,
               }}
             >
-              <Image
-                src={category.image}
-                alt={category.name}
-                fill
-                sizes="200px"
-                className="object-cover"
-              />
+              {category.image ? (
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  fill
+                  sizes="200px"
+                  className="object-cover"
+                />
+              ) : (
+                // Tinted with the category's own accent, so an unphotographed
+                // card still reads as itself rather than as a broken one.
+                <div
+                  className="absolute inset-0 flex items-center justify-center"
+                  style={{ background: `${category.accentColor}55` }}
+                >
+                  <span className="font-headline-md text-body-md text-primary text-center leading-tight">
+                    Coming
+                    <br />
+                    soon
+                  </span>
+                </div>
+              )}
             </div>
             <span className="text-label-caps font-label-caps text-primary group-hover:font-bold block leading-tight">
               {category.name}

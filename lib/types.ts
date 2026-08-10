@@ -6,7 +6,8 @@ export interface Category {
   accentColor: string;
   /** rgba/hex used for the offset shadow on the category circle */
   shadowColor: string;
-  image: string;
+  /** null until the category has been photographed */
+  image: string | null;
 }
 
 export interface Product {
