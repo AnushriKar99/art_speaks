@@ -88,28 +88,30 @@ export default async function AboutPage() {
 
         {/* ---- The journey ---- */}
         <section className="max-w-3xl mx-auto px-margin-mobile pt-24 relative z-10">
-          <span className="text-label-caps font-label-caps text-primary uppercase tracking-[0.1em] mb-1 block">
-            The Artist
-          </span>
           <h3 className="text-headline-lg font-headline-md text-on-surface mb-6">
-            How it started
+            An Art Kid&apos;s Journey of Survival
           </h3>
-          {/* Placeholder story copy — expand or rewrite anytime. */}
           <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed font-medium">
-            It started with a single brushstroke and a need to speak without
-            words. Art Speaks began as a personal journal in 2021, and has since
-            grown into a community of people who appreciate the tactile and the
-            thoughtful.
+            It started in lockdown, when not only was the world locked inside,
+            but so was my life.
           </p>
           <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed">
-            My workspace is a chaotic collection of dried flowers, vintage beads,
-            and too many sketchbooks to count. I wouldn&apos;t have it any other
-            way. Every piece that leaves the studio has been held, adjusted, and
-            fussed over until it feels just right.
+            When life got too much to bear and everything felt stuck, it was art
+            that kept me going. Slowly, I found my groove again — not just in
+            art, but in myself.
+          </p>
+          <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed">
+            What started with simply getting back to creating grew into building
+            a community that appreciated my art, and eventually, into starting my
+            own small business.
+          </p>
+          <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed">
+            It&apos;s been a rollercoaster ride — messy, chaotic, beautiful, and
+            everything in between. But through it all, there&apos;s been me and
+            this little art kid inside me, figuring it all out together.
           </p>
           <p className="text-body-md text-on-surface-variant leading-relaxed">
-            What began as a way to process my own days has become a way to share
-            small moments of whimsy with yours.
+            And honestly, we wouldn&apos;t have it any other way.
           </p>
         </section>
 
