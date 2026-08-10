@@ -1,9 +1,27 @@
 import Image from "next/image";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
-import { StarRating } from "@/components/ui/star-rating";
 
-const REVIEW_IMAGE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDtRxS2g0YpcoXPBcMuAenPeQ-A5oWSTDqA7DFPDI9K4fG3tbncgm-3oWAJ9ntgd56wXgoi4rkJvDI80dIQUH_XhDzYJpyasjkud4KYgUUVL1V4jbZolY_-PRbwaTJ0uGVTcdYvKh9hXiqRoaqOEHshNTr8ItutL2_Zf7BsEzJFj0J4Jozrmy2EJlXLGSbgCoU4QBgNbWvHkQNbNhUh1yTZeyl5J2Yd2w3ggoX8C85YvV2MVJoaIVnSzg";
+/**
+ * Real messages and story reposts from customers, shown as the screenshots
+ * they arrived as.
+ *
+ * This replaced three invented testimonials with a stock avatar. A screenshot
+ * is worth more than well-written praise precisely because it is obviously not
+ * copywriting — the typos and the emoji are the proof.
+ *
+ * Portrait images of differing heights, so they sit in a horizontal scroller
+ * at a fixed height rather than a grid, where the ragged bottoms would show.
+ */
+const REVIEWS = [
+  { src: "/images/reviews/review-1.jpg", alt: "Message: they turned out way cuter than I imagined, thank you for exceeding my expectations" },
+  { src: "/images/reviews/review-2.jpg", alt: "Message: received my package today, it's perfect" },
+  { src: "/images/reviews/review-3.jpg", alt: "Review: they looked exact as shown and are looking great on my fridge" },
+  { src: "/images/reviews/review-4.jpg", alt: "Story: everything is too cute, I will love to purchase more" },
+  { src: "/images/reviews/review-5.jpg", alt: "Story: happy with the purchase, all the items are very nice including the freebie" },
+  { src: "/images/reviews/review-6.jpg", alt: "Story: got the prettiest bookmarks and look at the freebies" },
+  { src: "/images/reviews/review-7.jpg", alt: "Story: a commissioned piece, thank you so much" },
+  { src: "/images/reviews/review-8.jpg", alt: "Story: spotted this lovely small business in HSR Layout" },
+];
 
 export function ReviewsCarousel() {
   return (
@@ -13,68 +31,30 @@ export function ReviewsCarousel() {
         <h3 className="text-headline-md font-headline-md text-on-surface">
           Loved by you
         </h3>
+        <p className="text-body-md text-on-surface-variant mt-2">
+          Straight from the people who ordered.
+        </p>
       </div>
-      <div className="flex gap-8 overflow-x-auto hide-scrollbar py-4">
-        {/* Review 1 */}
-        <div className="min-w-[300px] md:min-w-[340px] bg-white p-8 rounded-[3rem] shadow-lg border-2 border-candy-pink/10 flex flex-col relative">
-          <div className="absolute -top-4 -left-2 text-4xl text-candy-pink">
-            &ldquo;
-          </div>
-          <StarRating rating={5} />
-          <p className="text-body-md text-on-surface-variant italic my-8 flex-grow leading-relaxed font-medium">
-            &ldquo;The phone charm is even more beautiful in person. You can
-            really feel the care that went into it.&rdquo;
-          </p>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-candy-pink/30 border-2 border-white" />
-            <span className="text-label-caps font-bold text-primary tracking-wider">
-              Sarah L.
-            </span>
-          </div>
-        </div>
 
-        {/* Review 2 */}
-        <div className="min-w-[300px] md:min-w-[340px] bg-white rounded-[3rem] shadow-lg border-2 border-candy-pink/10 overflow-hidden flex flex-col">
-          <div className="relative w-full h-44">
-            <Image
-              src={REVIEW_IMAGE}
-              alt="Customer photo"
-              fill
-              sizes="340px"
-              className="object-cover"
-            />
-          </div>
-          <div className="p-8 flex-grow">
-            <p className="text-body-md text-on-surface-variant mb-6 font-medium leading-relaxed">
-              &ldquo;Perfect addition to my reading nook. Packaging was so
-              cute!&rdquo;
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-lavender-dream/30 border-2 border-white" />
-              <span className="text-label-caps font-bold text-primary tracking-wider">
-                David K.
-              </span>
+      <div className="flex gap-6 overflow-x-auto hide-scrollbar py-4 snap-x snap-mandatory">
+        {REVIEWS.map((r) => (
+          <figure
+            key={r.src}
+            className="snap-start shrink-0 bg-white p-3 rounded-[2rem] shadow-lg border-2 border-candy-pink/10"
+          >
+            <div className="relative w-[240px] sm:w-[280px] h-[340px] sm:h-[400px] rounded-[1.4rem] overflow-hidden bg-surface-container-high">
+              <Image
+                src={r.src}
+                alt={r.alt}
+                fill
+                sizes="(min-width: 640px) 280px, 240px"
+                // object-top: the message is at the top of most of these, and
+                // centring would crop the words rather than the packaging.
+                className="object-cover object-top"
+              />
             </div>
-          </div>
-        </div>
-
-        {/* Review 3 */}
-        <div className="min-w-[300px] md:min-w-[340px] bg-white p-8 rounded-[3rem] shadow-lg border-2 border-candy-pink/10 flex flex-col relative">
-          <div className="absolute -top-4 -left-2 text-4xl text-candy-pink">
-            &ldquo;
-          </div>
-          <StarRating rating={5} />
-          <p className="text-body-md text-on-surface-variant italic my-8 flex-grow leading-relaxed font-medium">
-            &ldquo;My worry stone goes everywhere with me now. Such a calming
-            little companion.&rdquo;
-          </p>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-mint-green/30 border-2 border-white" />
-            <span className="text-label-caps font-bold text-primary tracking-wider">
-              Priya M.
-            </span>
-          </div>
-        </div>
+          </figure>
+        ))}
       </div>
     </section>
   );

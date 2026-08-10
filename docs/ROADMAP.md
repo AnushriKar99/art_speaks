@@ -94,7 +94,7 @@ and waiting.
 | ~~Wishlist persistence~~ | **Done** — saves to the `wishlist` table, requires an account, RLS-enforced. Signed-out visitors get a sign-in prompt. |
 | ~~Storefront search~~ | **Done** — substring match across name, description, artisan note, slug and category, with pg_trgm typo tolerance as a fallback. |
 | Category images | 5 of 8 uploaded and linked. Still needed: **bag-charms, tote-bags, stickers** — these show a tinted "Coming soon" tile until then. Optimise with `MAX_EDGE=800`, upload to `product-images/categories/`, then link. |
-| Logo + review avatars | The header/footer wordmark and the reviews carousel still hotlink Stitch URLs, which will eventually stop resolving. |
+| Logo image | The header and footer wordmark still hotlink a Stitch URL, which will eventually stop resolving. Requested 2026-07-20, asset never supplied. |
 | ~~Custom order section image~~ | **Done** — a real studio flat-lay, served from `public/images/`. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
 | **No test suite** | Nothing is covered. Worth adding around the money paths — stock decrement, order totals — before payment ships. |
