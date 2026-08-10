@@ -9,22 +9,30 @@ export function AboutSection() {
       <div className="absolute inset-0 checkered-pattern-mint opacity-20 z-[-1] rounded-[60px]" />
       <div className="order-2 md:order-1 relative">
         <BadgeSticker className="mb-4">Hello!</BadgeSticker>
-        <span className="text-label-caps font-label-caps text-primary uppercase tracking-[0.1em] mb-1 block">
-          The Artist
-        </span>
         <h3 className="text-headline-md font-headline-md text-on-surface mb-6">
-          My Journey
+          An Art Kid&apos;s Journey of Survival
         </h3>
         <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed font-medium">
-          It started with a single brushstroke and a need to speak without
-          words. Art Speaks began as a personal journal in 2021, and has
-          since grown into a community of people who appreciate the tactile and
-          the thoughtful.
+          It started in lockdown, when not only was the world locked inside, but
+          so was my life.
+        </p>
+        <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed">
+          When life got too much to bear and everything felt stuck, it was art
+          that kept me going. Slowly, I found my groove again — not just in art,
+          but in myself.
+        </p>
+        <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed">
+          What started with simply getting back to creating grew into building a
+          community that appreciated my art, and eventually, into starting my own
+          small business.
+        </p>
+        <p className="text-body-md text-on-surface-variant mb-4 leading-relaxed">
+          It&apos;s been a rollercoaster ride — messy, chaotic, beautiful, and
+          everything in between. But through it all, there&apos;s been me and
+          this little art kid inside me, figuring it all out together.
         </p>
         <p className="text-body-md text-on-surface-variant mb-8 leading-relaxed">
-          My workspace is a chaotic collection of dried flowers, vintage beads,
-          and too many sketchbooks to count. I wouldn&apos;t have it any other
-          way.
+          And honestly, we wouldn&apos;t have it any other way.
         </p>
       </div>
       <div className="order-1 md:order-2 flex justify-center">
