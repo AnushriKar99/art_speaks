@@ -21,6 +21,18 @@ Last updated 2026-07-31.
 - **Auth flow rework.** One `/login` for everyone; admin is a flag, not a
   separate door. Customer signup with email confirmation at `/auth/confirm`,
   handling both the `token_hash` and `code` callback shapes.
+- **Phase 3 — inventory + storefront wiring.** Inventory table, add/edit form
+  with in-browser image resizing, and the storefront reading Supabase. Category
+  CRUD was skipped deliberately (see Not doing).
+- **Phase 4 — sales.** Offline sale tap-grid, orders page, revenue by month
+  split by channel, and computed best-sellers beside the Featured toggle.
+- **Cart and checkout.** A real localStorage cart, an address form, and orders
+  written by `place_whatsapp_order` — a SECURITY DEFINER function with no price
+  parameter, so a browser cannot set what something costs.
+- **Storefront search.** Substring match across every text column plus category,
+  with pg_trgm typo tolerance as a fallback.
+- **Moved the project to ap-south-1 (Mumbai).** Page renders went from ~440ms to
+  ~125ms; category caching took `/about` to 4ms.
 
 ## Verify (blocked on dashboard access)
 
@@ -52,48 +64,25 @@ Last updated 2026-07-31.
 
 ## Next
 
-### 1. Phase 3 — inventory + storefront wiring
-Inventory table, add/edit product form with image upload, category CRUD, then
-swap `lib/data/products.ts` and `lib/data/cart.ts` to read Supabase.
+### 1. Deploy
+Everything points at `localhost:3000` — Supabase Site URL, auth redirect URLs,
+and the Storage host in `next.config.ts`. Nobody can buy anything until this
+exists, and the auth URL configuration below is part of it.
 
-Done when a product added in the admin panel appears on `/shop` with its
-uploaded image and an INR price.
-
-Two mock-data problems disappear with this work: one product still points at a
-`"stationery"` category that no longer exists (invisible under every filter),
-and all 8 category cards share one placeholder image.
-
-### 2. Phase 4 — sales
-Offline sale entry (the approved tap-grid), monthly revenue chart, computed
-best-sellers beside the Featured toggle, and the orders page.
-
-Depends on Phase 3: the entry screen is a grid of product tiles, so it can't be
-built or tested against an empty products table.
-
-### 3. Content — My Journey and About Us
+### 2. Content — My Journey and About Us
 Copy and layout for `components/home/about-section.tsx` and `/about`. No
 specifics agreed yet.
 
-### 4. Admin dashboard design review
+### 3. Admin dashboard design review
 The `/admin` landing page is four cards linking onward. To be reviewed and
 redesigned after using it — no defined change yet.
 
-### 5. Deploy
-Everything currently points at `localhost:3000` — Supabase Site URL, auth
-redirect URLs, the Storage host in `next.config.ts`. Payment cannot be tested
-properly without a real domain, so this comes before it.
-
-### 6. Cart persistence
-Prerequisite for payment. Add-to-cart buttons on the home carousels and shop
-grid are non-functional stubs, `/cart` renders two hardcoded items from
-`lib/data/cart.ts`, and "Proceed to Checkout" is a styled no-op.
-
-### 7. Payment
-`orders.payment_id` is deliberately provider-neutral. **Razorpay** is the better
-fit than Stripe: amounts are already in paise, and Stripe's India support for
-domestic cards is awkward. Order creation happens server-side after payment
-confirms — the one legitimate use for `SUPABASE_SERVICE_ROLE_KEY`, which stays
-unset until then.
+### 4. Payment
+Deferred deliberately: orders are confirmed over WhatsApp and marked paid by
+hand, which works and needs no integration. When it does land, **Razorpay** is
+the better fit than Stripe — amounts are already in paise, and Stripe's India
+support for domestic cards is awkward. `orders.payment_id` is provider-neutral
+and waiting.
 
 ---
 
@@ -104,7 +93,7 @@ unset until then.
 | Add-to-cart animation | The item should visibly fly into the basket when added, rather than only the header count changing. Purely presentational — the cart itself works. |
 | Wishlist persistence | `getWishlist()` returns `[]`; every heart button is a stub. The `wishlist` table and its RLS already exist, unused. First thing a customer account is actually for. |
 | ~~Storefront search~~ | **Done** — substring match across name, description, artisan note, slug and category, with pg_trgm typo tolerance as a fallback. |
-| Category images | The 8 product photos are uploaded and served from Supabase Storage. Categories still share one hotlinked Stitch placeholder (`image_url` is null on all 8). |
+| Category images | 5 of 8 optimised and ready to upload (`bookmarks`, `fridge-magnets`, `keychains-worry-stones`, `paintings`, `phone-charms`). Still needed: **bag-charms, tote-bags, stickers**. Then run `supabase/link_category_images.sql`. |
 | Logo image in the hero | Requested 2026-07-20, asset never supplied. |
 | ~~Custom order section image~~ | **Done** — a real studio flat-lay, served from `public/images/`. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
@@ -112,5 +101,8 @@ unset until then.
 
 ## Not doing (for now)
 
+- Category CRUD in the admin panel — the 8 categories cover the range and change
+  once or twice a year; adding one is a single SQL statement. Note that a SQL
+  edit takes up to an hour to appear, since categories are cached.
 - Offline refunds and returns.
 - Audit logging of admin changes — one admin, not yet worth it.
