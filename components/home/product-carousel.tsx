@@ -9,6 +9,7 @@ import { Icon } from "@/components/ui/icon";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { ProductModal } from "@/components/product/product-modal";
 import { useCart } from "@/lib/cart/cart-store";
+import { useSaveToggle } from "@/lib/wishlist/use-save-toggle";
 
 type Variant = "bestseller" | "arrival";
 
@@ -124,6 +125,7 @@ function BestSellerCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
+  const { wishlist, saveToggle } = useSaveToggle();
   const { add } = useCart();
   return (
     <div
@@ -147,13 +149,14 @@ function BestSellerCard({
         />
         <button
           onClick={(e) => {
-            // Wishlist stub — no persistence yet.
             e.stopPropagation();
+            void saveToggle(product.id);
           }}
           className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
-          aria-label={`Add ${product.name} to wishlist`}
+          aria-label={`${wishlist.has(product.id) ? "Remove" : "Save"} ${product.name}`}
+            aria-pressed={wishlist.has(product.id)}
         >
-          <Icon name="favorite" className="text-[20px]" />
+          <Icon name="favorite" className="text-[20px]" filled={wishlist.has(product.id)} />
         </button>
         <button
           onClick={(e) => {
@@ -186,6 +189,7 @@ function ArrivalCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
+  const { wishlist, saveToggle } = useSaveToggle();
   const { add } = useCart();
   return (
     <div
@@ -209,13 +213,14 @@ function ArrivalCard({
         />
         <button
           onClick={(e) => {
-            // Wishlist stub — no persistence yet.
             e.stopPropagation();
+            void saveToggle(product.id);
           }}
           className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
-          aria-label={`Add ${product.name} to wishlist`}
+          aria-label={`${wishlist.has(product.id) ? "Remove" : "Save"} ${product.name}`}
+            aria-pressed={wishlist.has(product.id)}
         >
-          <Icon name="favorite" className="text-[20px]" />
+          <Icon name="favorite" className="text-[20px]" filled={wishlist.has(product.id)} />
         </button>
         <button
           onClick={(e) => {

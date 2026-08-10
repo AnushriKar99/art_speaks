@@ -5,6 +5,7 @@ import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { useCart } from "@/lib/cart/cart-store";
+import { useSaveToggle } from "@/lib/wishlist/use-save-toggle";
 
 export function ProductCard({
   product,
@@ -13,6 +14,7 @@ export function ProductCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
+  const { wishlist, saveToggle } = useSaveToggle();
   const { add } = useCart();
   return (
     <div
@@ -47,13 +49,14 @@ export function ProductCard({
         </button>
         <button
           onClick={(e) => {
-            // Wishlist stub — no persistence yet.
             e.stopPropagation();
+            void saveToggle(product.id);
           }}
           className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
-          aria-label={`Add ${product.name} to wishlist`}
+          aria-label={`${wishlist.has(product.id) ? "Remove" : "Save"} ${product.name}`}
+            aria-pressed={wishlist.has(product.id)}
         >
-          <Icon name="favorite" className="text-[20px]" />
+          <Icon name="favorite" className="text-[20px]" filled={wishlist.has(product.id)} />
         </button>
       </div>
       <div className="text-center">

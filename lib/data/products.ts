@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Category, Product } from "@/lib/types";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 /**
  * Product and category reads, backed by Supabase.
@@ -332,11 +333,34 @@ async function searchProductsFuzzy(term: string): Promise<Product[]> {
 }
 
 /**
- * Wishlist needs persisted favourites, which the heart buttons don't write yet.
- * The `wishlist` table and its RLS exist; only the UI wiring is missing.
+ * The signed-in visitor's saved pieces.
+ *
+ * Uses the session client rather than the public one — RLS on `wishlist`
+ * filters to the caller's own rows, so a signed-out visitor gets nothing back
+ * without this needing to check.
  */
 export async function getWishlist(): Promise<Product[]> {
-  return [];
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("wishlist")
+    .select(`products(${PRODUCT_COLUMNS})`)
+    .eq("customer_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getWishlist:", error.message);
+    return [];
+  }
+
+  return (data as unknown as { products: ProductRow | null }[])
+    .map((r) => r.products)
+    .filter((p): p is ProductRow => p !== null)
+    .map(toProduct);
 }
 
 /**
