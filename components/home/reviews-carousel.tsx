@@ -23,7 +23,6 @@ const REVIEWS = [
   { src: "/images/reviews/review-1.jpg", w: 994, h: 852, alt: "Message: they turned out way cuter than I imagined, thank you for exceeding my expectations" },
   { src: "/images/reviews/review-2.jpg", w: 1059, h: 1363, alt: "Message: received my package today, it's perfect" },
   { src: "/images/reviews/review-3.jpg", w: 1084, h: 1084, alt: "Review: they looked exact as shown and are looking great on my fridge" },
-  { src: "/images/reviews/review-4.jpg", w: 1084, h: 1585, alt: "Story: everything is too cute, I will love to purchase more" },
   { src: "/images/reviews/review-5.jpg", w: 1050, h: 1225, alt: "Story: happy with the purchase, all the items are very nice including the freebie" },
   { src: "/images/reviews/review-6.jpg", w: 1076, h: 1600, alt: "Story: got the prettiest bookmarks and look at the freebies" },
 ];
@@ -43,17 +42,14 @@ export function ReviewsCarousel() {
 
       <div className="flex gap-6 overflow-x-auto hide-scrollbar py-4 snap-x snap-mandatory items-start">
         {REVIEWS.map((r) => (
-          <figure
-            key={r.src}
-            className="snap-start shrink-0 bg-white p-3 rounded-[2rem] shadow-lg border-2 border-candy-pink/10"
-          >
+          <figure key={r.src} className="snap-start shrink-0">
             <Image
               src={r.src}
               alt={r.alt}
               width={r.w}
               height={r.h}
               sizes="(min-width: 640px) 400px, 320px"
-              className="h-[320px] sm:h-[400px] w-auto max-w-none rounded-[1.4rem]"
+              className="h-[320px] sm:h-[400px] w-auto max-w-none rounded-[2rem] shadow-lg"
             />
           </figure>
         ))}
