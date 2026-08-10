@@ -4,8 +4,8 @@ import { ProductImage } from "@/components/ui/product-image";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
-import { useCart } from "@/lib/cart/cart-store";
 import { useSaveToggle } from "@/lib/wishlist/use-save-toggle";
+import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 
 export function ProductCard({
   product,
@@ -15,7 +15,6 @@ export function ProductCard({
   onOpen: (product: Product) => void;
 }) {
   const { wishlist, saveToggle } = useSaveToggle();
-  const { add } = useCart();
   return (
     <div
       className="group cursor-pointer"
@@ -36,17 +35,12 @@ export function ProductCard({
           sizes="(min-width: 768px) 33vw, 50vw"
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
-        <button
-          onClick={(e) => {
-            // Stop the click reaching the card, which opens the modal.
-            e.stopPropagation();
-            add(product.id);
-          }}
-          className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary shadow-[4px_4px_0px_#864d61] hover:translate-y-[-2px] transition-all"
-          aria-label={`Add ${product.name} to cart`}
-        >
-          <Icon name="add_shopping_cart" className="text-[20px]" />
-        </button>
+        <AddToCartButton
+          productId={product.id}
+          productName={product.name}
+          stockCount={product.stockCount}
+          className="absolute bottom-3 right-3"
+        />
         <button
           onClick={(e) => {
             e.stopPropagation();

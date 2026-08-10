@@ -8,8 +8,8 @@ import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { ProductModal } from "@/components/product/product-modal";
-import { useCart } from "@/lib/cart/cart-store";
 import { useSaveToggle } from "@/lib/wishlist/use-save-toggle";
+import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 
 type Variant = "bestseller" | "arrival";
 
@@ -126,7 +126,6 @@ function BestSellerCard({
   onOpen: (product: Product) => void;
 }) {
   const { wishlist, saveToggle } = useSaveToggle();
-  const { add } = useCart();
   return (
     <div
       className="min-w-[260px] group cursor-pointer block"
@@ -158,17 +157,13 @@ function BestSellerCard({
         >
           <Icon name="favorite" className="text-[20px]" filled={wishlist.has(product.id)} />
         </button>
-        <button
-          onClick={(e) => {
-            // Stop the click reaching the card, which opens the modal.
-            e.stopPropagation();
-            add(product.id);
-          }}
-          className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary shadow-[4px_4px_0px_#864d61] hover:translate-y-[-2px] transition-all z-10"
-          aria-label={`Add ${product.name} to cart`}
-        >
-          <Icon name="add_shopping_cart" />
-        </button>
+        <AddToCartButton
+          productId={product.id}
+          productName={product.name}
+          stockCount={product.stockCount}
+          size="w-12 h-12"
+          className="absolute bottom-4 right-4"
+        />
       </div>
       <div className="text-center">
         <h4 className="font-headline-md text-[14px] text-on-surface mb-1">
@@ -190,7 +185,6 @@ function ArrivalCard({
   onOpen: (product: Product) => void;
 }) {
   const { wishlist, saveToggle } = useSaveToggle();
-  const { add } = useCart();
   return (
     <div
       className="min-w-[220px] group cursor-pointer block"
@@ -222,17 +216,13 @@ function ArrivalCard({
         >
           <Icon name="favorite" className="text-[20px]" filled={wishlist.has(product.id)} />
         </button>
-        <button
-          onClick={(e) => {
-            // Stop the click reaching the card, which opens the modal.
-            e.stopPropagation();
-            add(product.id);
-          }}
-          className="absolute bottom-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary shadow-[4px_4px_0px_#864d61] hover:translate-y-[-2px] transition-all z-10"
-          aria-label={`Add ${product.name} to cart`}
-        >
-          <Icon name="add_shopping_cart" className="text-[20px]" />
-        </button>
+        <AddToCartButton
+          productId={product.id}
+          productName={product.name}
+          stockCount={product.stockCount}
+          size="w-10 h-10"
+          className="absolute bottom-3 right-3"
+        />
       </div>
       <h4 className="font-headline-md text-[14px] text-on-surface ml-2">
         {product.name}
