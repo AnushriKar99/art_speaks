@@ -1,1 +1,0 @@
-# _a_r_t_speaks_
