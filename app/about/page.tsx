@@ -66,12 +66,12 @@ export default async function AboutPage() {
               little bit of everything — from phone charms and worry stones to
               embroidery and paintings.
             </p>
-            <p className="text-body-md text-on-surface-variant leading-relaxed mb-4">
+            <p className="text-body-lg text-on-surface-variant font-medium leading-relaxed mb-4">
               Everything is handcrafted here, with lots of love (and probably a
               little chaos), from the products themselves to the packaging they
               arrive in.
             </p>
-            <p className="text-body-md text-on-surface-variant leading-relaxed">
+            <p className="text-body-lg text-on-surface-variant font-medium leading-relaxed">
               It&apos;s small, it&apos;s personal, and it&apos;s very much us.
             </p>
           </div>
