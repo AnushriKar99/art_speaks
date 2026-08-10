@@ -91,10 +91,10 @@ and waiting.
 | Item | Notes |
 | --- | --- |
 | Add-to-cart animation | The item should visibly fly into the basket when added, rather than only the header count changing. Purely presentational — the cart itself works. |
-| Wishlist persistence | `getWishlist()` returns `[]`; every heart button is a stub. The `wishlist` table and its RLS already exist, unused. First thing a customer account is actually for. |
+| ~~Wishlist persistence~~ | **Done** — saves to the `wishlist` table, requires an account, RLS-enforced. Signed-out visitors get a sign-in prompt. |
 | ~~Storefront search~~ | **Done** — substring match across name, description, artisan note, slug and category, with pg_trgm typo tolerance as a fallback. |
-| Category images | 5 of 8 optimised and ready to upload (`bookmarks`, `fridge-magnets`, `keychains-worry-stones`, `paintings`, `phone-charms`). Still needed: **bag-charms, tote-bags, stickers**. Then run `supabase/link_category_images.sql`. |
-| Logo image in the hero | Requested 2026-07-20, asset never supplied. |
+| Category images | 5 of 8 uploaded and linked. Still needed: **bag-charms, tote-bags, stickers** — these show a tinted "Coming soon" tile until then. Optimise with `MAX_EDGE=800`, upload to `product-images/categories/`, then link. |
+| Logo + review avatars | The header/footer wordmark and the reviews carousel still hotlink Stitch URLs, which will eventually stop resolving. |
 | ~~Custom order section image~~ | **Done** — a real studio flat-lay, served from `public/images/`. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
 | **No test suite** | Nothing is covered. Worth adding around the money paths — stock decrement, order totals — before payment ships. |
