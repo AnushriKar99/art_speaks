@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { getCategories, getCollection } from "@/lib/data/products";
 import { EmptyCollection } from "@/components/product/empty-collection";
 import { createClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
 
 type ShopSearchParams = Promise<{ collection?: string; q?: string }>;
 
@@ -16,7 +17,9 @@ export async function generateMetadata({
   searchParams: ShopSearchParams;
 }): Promise<Metadata> {
   const { collection, q } = await searchParams;
-  const { title } = await getCollection(collection, q);
+  const view = await getCollection(collection, q);
+  if (!view) return { title: "Art Speaks | Not found" };
+  const { title } = view;
   return {
     title: `Art Speaks | ${title}`,
     description: `Browse ${title} from the Art Speaks studio.`,
@@ -38,6 +41,8 @@ export default async function ShopPage({
   ]);
   const signedIn = Boolean(auth.data.user);
 
+  // An unknown collection slug is a 404, not a 200 serving the full catalogue.
+  if (!view) notFound();
   const { title: heading, eyebrow, products } = view;
 
   return (

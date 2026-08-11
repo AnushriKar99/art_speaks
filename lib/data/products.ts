@@ -181,6 +181,39 @@ export async function getProductsByCategory(slug?: string): Promise<Product[]> {
     .filter((p) => p.categorySlug === slug);
 }
 
+/**
+ * One product by its web address.
+ *
+ * Returns null for a slug that does not exist, so the page can call notFound()
+ * rather than rendering an empty shell — a product that never existed and a
+ * product that is delisted should both be a 404, not a 200 with nothing on it.
+ */
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(PRODUCT_COLUMNS)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getProductBySlug:", error.message);
+    return null;
+  }
+  return data ? toProduct(data as unknown as ProductRow) : null;
+}
+
+/** Other pieces from the same category, for the bottom of a product page. */
+export async function getRelatedProducts(
+  categorySlug: string,
+  excludeSlug: string,
+  limit = 4,
+): Promise<Product[]> {
+  if (!categorySlug) return [];
+  const all = await getProductsByCategory(categorySlug);
+  return all.filter((p) => p.slug !== excludeSlug).slice(0, limit);
+}
+
 export async function getBestSellers(): Promise<Product[]> {
   const supabase = createPublicClient();
   const { data, error } = await supabase
@@ -401,7 +434,7 @@ const COLLECTION_TITLES: Record<string, string> = {
 export async function getCollection(
   slug?: string,
   query?: string,
-): Promise<CollectionView> {
+): Promise<CollectionView | null> {
   // A search term wins over any collection filter — someone who has typed into
   // the search box is looking across the whole shop, not within a category.
   const q = query?.trim();
@@ -451,10 +484,11 @@ export async function getCollection(
     };
   }
 
-  // Unknown slug → fall back to the full collection.
-  return {
-    title: "All Items",
-    eyebrow: "The Full Collection",
-    products: await getAllProducts(),
-  };
+  // Unknown slug → signal it, rather than quietly serving the full catalogue.
+  //
+  // Falling back was graceful for a human who mistyped, but to a crawler
+  // /shop?collection=anything-at-all was a 200 identical to /shop — an
+  // unbounded space of duplicate URLs, which is the soft-404 pattern search
+  // engines penalise. The page turns this into a real 404.
+  return null;
 }

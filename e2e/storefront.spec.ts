@@ -68,3 +68,22 @@ test("an empty basket says what to do about it", async ({ page }) => {
   await expect(page.getByText(/basket is empty/i)).toBeVisible();
   await expect(page.getByRole("link", { name: /browse the shop/i })).toBeVisible();
 });
+
+test("a product has a page of its own", async ({ page }) => {
+  await page.goto("/shop/heart-bow-pin");
+  await expect(page.getByRole("heading", { name: /heart bow pin/i })).toBeVisible();
+  await expect(page.getByText(/₹\d/).first()).toBeVisible();
+});
+
+test("an unknown product slug is a 404, not an empty page", async ({ page }) => {
+  const res = await page.goto("/shop/no-such-piece");
+  expect(res?.status()).toBe(404);
+  await expect(page.getByText(/can.t find that one/i)).toBeVisible();
+});
+
+test("an unknown collection slug is a 404, not the whole catalogue", async ({ page }) => {
+  // Falling back to every product made /shop?collection=<anything> a 200
+  // duplicate of /shop — an unbounded set of URLs serving identical content.
+  const res = await page.goto("/shop?collection=not-a-real-category");
+  expect(res?.status()).toBe(404);
+});
