@@ -1,139 +1,89 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) working in this repository.
+
+> **Kept deliberately short.** An earlier version of this file grew detailed
+> enough to drift badly out of date — it described mock data long after the
+> storefront read Supabase, and documented two files that had been deleted. A
+> stale architecture doc is worse than none, because it is trusted. So this one
+> records only what is slow to discover from the code, and points at the code
+> for everything else.
 
 ## Project
 
-`Art Speaks` — an e-commerce storefront for a handcrafted art studio (phone
-charms, worry stones, bookmarks, stationery). Built from Google Stitch design
-exports ("Pastel Artisan" / kawaii-artisanal aesthetic).
-
-Pages: **homepage** (`/`), **shop / all-items** (`/shop`), **cart** (`/cart`),
-**about** (`/about`), **refund policy** (`/refund-policy`), and a password-gated
-**admin area** (`/admin`, `/admin/login`).
+`Art Speaks` — an e-commerce storefront for a handcrafted art studio in India
+(phone charms, worry stones, bookmarks, paintings, embroidery). Built from
+Google Stitch design exports; "Pastel Artisan" / kawaii-artisanal aesthetic.
 
 ## Commands
 
 ```bash
-npm run dev     # start dev server (Turbopack) at http://localhost:3000
-npm run build   # production build (also runs typecheck + eslint)
-npm run start   # serve the production build
-npm run lint    # eslint only
-npx tsc --noEmit  # typecheck only
+npm run dev     # dev server (Turbopack) at :3000
+npm run build   # production build — also typechecks and lints
+npm run lint
+npm run e2e     # Playwright; needs .env.test (see .env.test.example)
+npm run e2e:ui  # same, watching in a browser
+npx tsc --noEmit
 ```
 
-There is no test suite yet. `app/layout.tsx` has one known, accepted eslint
-warning (`no-page-custom-font`, from the Material Symbols `<link>`).
+**Never run `npm run build` while `npm run dev` is running.** They share
+`.next`, and building strands the dev server without its manifests — every
+route 500s until it is restarted. This has caught us repeatedly. The e2e suite
+avoids it with `NEXT_DIST_DIR`.
 
 ## Stack
 
-- **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript**
-- **Tailwind CSS v4** — configured entirely in `app/globals.css` via `@theme`
-  tokens (there is **no** `tailwind.config.js`). PostCSS plugin `@tailwindcss/postcss`.
-- **Supabase** — `@supabase/supabase-js` + `@supabase/ssr` (Auth + Postgres).
-- `next/font/google` self-hosts Fredoka (display/headline), Be Vietnam Pro (body), Hanken Grotesk (labels).
-- Material Symbols Outlined is loaded via a plain `<link>` in `app/layout.tsx`
-  (variable icon-font axes don't play well with `next/font`).
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · Supabase
+(Postgres + Auth + Storage) · Playwright.
 
-## Architecture
+Tailwind is configured entirely in `app/globals.css` via `@theme` — there is
+**no** `tailwind.config.js`. All colours, spacing, the type scale and the
+bespoke kawaii classes live there.
 
-- `app/layout.tsx` — root layout: fonts, Material Symbols link, `<body>` shell.
-- `app/page.tsx` — homepage (async Server Component). Composes `components/home/*`.
-- `app/shop/page.tsx` — all-items page (async Server Component). Reads
-  `?collection=<slug>` via `await searchParams` (Next 16 dynamic APIs are async)
-  and resolves it through `getCollection`; no param → "All Items".
-- `app/cart/page.tsx`, `app/about/page.tsx`, `app/refund-policy/page.tsx` —
-  Server Components, each exporting `metadata`.
-- `app/admin/` — `page.tsx` (guarded by `requireAdmin()`, sign-out Server Action)
-  and `login/page.tsx` (client, email/password via `signInWithPassword`).
-- `proxy.ts` → `lib/supabase/middleware.ts` — refreshes the Supabase session
-  on every request and redirects logged-out visitors away from `/admin`.
-  (`proxy.ts` is Next 16's rename of the old `middleware.ts` file convention;
-  the exported function must be named `proxy`. The Supabase helper keeps the
-  `middleware.ts` name to match Supabase's own docs.)
-- `components/layout/` — `site-header` (homepage, client: menu drawer),
-  `shop-header` (sticky, client: menu + search toggle), `header-nav` (client:
-  desktop inline nav + Categories dropdown, mobile left panel), `site-footer`
-  (server), `bottom-tab-bar` (client, `usePathname` for active tab; Shop /
-  Gallery / Wishlist).
-- `components/home/` — hero, `product-carousel` (client, shared by Best Sellers
-  + New Arrivals, has scroll arrows + "View more"), `category-scroller`
-  (cards → `/shop?collection=slug`), `custom-order-form` (client), about,
-  `reviews-carousel`, decorative-blobs.
-- `components/product/` — `product-grid` (client, owns modal open state),
-  `product-card` (client, opens modal; favorite/cart buttons are stubs),
-  `product-modal` (client, qty stepper + Esc/scroll-lock).
-- `components/cart/cart-view.tsx` — client, renders the basket + qty steppers.
-- `components/ui/` — `icon` (Material Symbols wrapper), `badge-sticker`,
-  `section-heading`, `star-rating`.
+## The things worth knowing before changing anything
 
-### Design tokens
-All ~40 colors, spacing (`gutter`, `margin-mobile`, etc.), the type scale
-(`display-lg`, `headline-md`, `body-md`, `label-caps`…), and fonts live in the
-`@theme` block in `app/globals.css`, which auto-generates utilities like
-`bg-primary`, `text-headline-md`, `px-margin-mobile`, `gap-gutter`,
-`font-display-lg`. Bespoke kawaii classes (`.checkered-pattern`, `.badge-sticker`,
-`.tactile-button`, `.wobbly-border`, `.floating-doodle`, `.hide-scrollbar`) are
-plain CSS lower in the same file.
+**Money is integers, in paise.** `price_cents`, `total_cents` and
+`unit_price_cents` hold ₹×100 — ₹450 is `45000`. The `_cents` name is a wart
+kept on purpose: it is the standard term for a currency's minor unit, and
+renaming would touch six columns plus the TypeScript types. Forms take rupees
+and convert; only the database sees paise.
 
-## Supabase backend
+**Security lives in the database, not the UI.** RLS decides what a request may
+do; `requireAdmin()` and the middleware only decide what renders. See
+`docs/LEARNING-auth-and-backend.md` for the full picture — it is the best
+starting point for anyone new here.
 
-Wired up but **not yet serving the storefront** — the schema, auth, and admin
-gate exist; the product/cart reads are still mock (see Data layer).
+**The storefront reads through a sessionless client** (`lib/supabase/public.ts`)
+so it always shows what a visitor sees. Admin reads use the session client
+(`lib/data/admin.ts`), which sees unpublished work too. Do not mix them.
 
-- `lib/supabase/client.ts` — browser client (anon key), for Client Components.
-- `lib/supabase/server.ts` — cookie-backed client for Server Components, Route
-  Handlers, and Server Actions (Next 16's `cookies()` is async).
-- `lib/supabase/middleware.ts` — session refresh + `/admin` redirect gate,
-  invoked from the root `proxy.ts`.
-- `lib/supabase/auth.ts` — `getUser()` and `requireAdmin()` (checks
-  `profiles.is_admin`, redirects otherwise).
-- `supabase/migrations/` — `0001_initial_schema.sql` (categories, products,
-  profiles, orders, order_items, reviews, wishlist + RLS), `0002_add_product_flags.sql`
-  (`is_best_seller` / `is_new_arrival`), `0003_admin_role.sql` (`is_admin` flag,
-  `public.is_admin()` SECURITY DEFINER helper, admin RLS policies).
-- `supabase/seed.sql`, `supabase/seed_categories.sql` — seed data ported from mock.
-- Env vars in `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY` (browser-safe), and a commented-out
-  `SUPABASE_SERVICE_ROLE_KEY` (server only, for order creation later).
+**Prices are never sent from the browser.** `place_whatsapp_order` takes product
+ids and quantities only, and reads prices from the products table itself. There
+is no parameter through which a price could arrive.
 
-The `/admin` area is protected in three layers: middleware (logged in?),
-`requireAdmin()` in the page (flagged admin?), and RLS in the database (can this
-user actually write?).
+**Stock moves on confirmation, not on order.** An order is `pending` until
+marked paid; the trigger in `0010`/`0014` deducts then, and restores if it
+leaves paid. Offline sales are written straight to `paid`.
 
-## Data layer
+**Redirects go through `lib/safe-redirect.ts`.** A `startsWith("/")` check is
+not enough — `/\evil.com` passes it and resolves off-site.
 
-`lib/data/products.ts` still returns **local mock data** (sourced from the Stitch
-export) through async functions — `getCategories`, `getCategoryBySlug`,
-`getAllProducts`, `getProductsByCategory`, `getBestSellers`, `getNewArrivals`,
-`getWishlist` (returns `[]`), and `getCollection`. The async signatures
-intentionally mirror the Supabase layer so swapping the function bodies is a
-drop-in change.
+## Layout
 
-`getCollection(slug?)` resolves the single `?collection=` param the `/shop` page
-is driven by — a category slug, or one of `best-sellers` / `new-arrivals` /
-`wishlist`, or undefined for the full collection — returning the products plus
-the display copy (`title`, `eyebrow`).
+- `app/` — routes. `(dashboard)` is a route group: it does not appear in the
+  URL, and exists so `requireAdmin()` in its layout guards every admin page
+  without guarding `/admin/login`.
+- `lib/data/` — every database read. `products.ts` is the storefront,
+  `admin.ts` the studio.
+- `supabase/migrations/` — numbered, append-only, idempotent. Never edit an
+  applied one; add the next number.
+- `supabase/setup_new_project.sql` — every migration and seed in one paste, for
+  standing up a fresh project. **Generated** by `build_setup.sh`; edit the
+  source, not the bundle.
+- `e2e/` — Playwright specs. They run against a separate Supabase project,
+  because checkout and admin tests write real orders and move real stock.
 
-`lib/data/cart.ts` holds cart types (`CartItem`) and `getCartItems()`, which
-returns a mock basket. Cart code belongs here, **not** in `products.ts` / `types.ts`.
+## Current state
 
-`lib/types.ts` — `Category`, `Product` (uses `priceCents`/`currency`,
-Stripe-shaped), and the `formatPrice` helper.
-
-`lib/contact.ts` — studio contact channels (WhatsApp number, email, Instagram)
-and `buildWhatsAppLink()`, shared by the footer and the custom order form.
-
-Product/category imagery is currently hotlinked from `lh3.googleusercontent.com`
-(allowlisted in `next.config.ts` `images.remotePatterns`).
-
-## Not built yet (intentional stubs)
-
-Cart persistence, checkout/Stripe, customer accounts, wishlist persistence, and
-search are not implemented. Add-to-cart, favorite, and the custom-order form
-submit are UI stubs — the custom-order form pre-fills a WhatsApp message
-(`buildWhatsAppLink`) rather than posting anywhere; it cannot auto-send.
-
-To finish the backend swap: replace the bodies in `lib/data/products.ts` and
-`lib/data/cart.ts` with Supabase queries, add the Storage host to
-`next.config.ts`, and back the custom-order form with a Server Action.
+Read `docs/ROADMAP.md`. It is kept current and says what is built, what is
+deliberately not, and what is next.

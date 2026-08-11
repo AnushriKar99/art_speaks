@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Regenerate SETUP_NEW_PROJECT.sql from the migrations and seeds.
+# Regenerate setup_new_project.sql from the migrations and seeds.
 #
 # That file is a convenience bundle for standing up a fresh Supabase project
 # in one paste. It is generated, so run this after changing any migration or
 # seed — otherwise the bundle and its sources drift apart and a new project
 # gets built from stale SQL.
 #
-#   ./supabase/build-setup.sh
+#   ./supabase/build_setup.sh
 #
 # Note: the seeds listed below are the only ones. An older seed.sql was deleted
 # — it truncated six tables including orders, while its header claimed it was
@@ -14,7 +14,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-OUT=supabase/SETUP_NEW_PROJECT.sql
+OUT=supabase/setup_new_project.sql
 
 FILES=(
   supabase/migrations/0001_initial_schema.sql
@@ -36,14 +36,14 @@ FILES=(
 )
 
 {
-  cat supabase/setup-header.sql.in
+  cat supabase/setup_header.sql.in
   for f in "${FILES[@]}"; do
     printf '\n\n-- ####################################################################\n'
     printf -- '-- ### %s\n' "$f"
     printf -- '-- ####################################################################\n\n'
     cat "$f"
   done
-  cat supabase/setup-footer.sql.in
+  cat supabase/setup_footer.sql.in
 } > "$OUT"
 
 echo "wrote $OUT ($(wc -l < "$OUT" | tr -d ' ') lines from ${#FILES[@]} sources)"
