@@ -1,8 +1,8 @@
 -- ============================================================
 -- The product-images bucket, and the policies protecting it.
 --
--- These existed only in setup-footer.sql.in, which feeds the generated
--- SETUP_NEW_PROJECT.sql — so a project rebuilt from migrations/ alone got a
+-- These existed only in setup_footer.sql.in, which feeds the generated
+-- setup_new_project.sql — so a project rebuilt from migrations/ alone got a
 -- PUBLIC BUCKET WITH NO WRITE POLICY. Raised in review on PR #1.
 --
 -- That matters more here than it would elsewhere. lib/images/upload.ts calls
