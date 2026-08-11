@@ -1,11 +1,9 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
-/** Same-site paths only, so a crafted link can't bounce a freshly signed-in visitor off-origin. */
-function safeDestination(next: string | null) {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
-}
+
 
 /**
  * Lands the link from a confirmation email and turns it into a session.
@@ -28,7 +26,7 @@ function safeDestination(next: string | null) {
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const destination = safeDestination(searchParams.get("next"));
+  const destination = safeRedirectPath(searchParams.get("next"), request.url);
 
   const fail = (reason: string) =>
     NextResponse.redirect(

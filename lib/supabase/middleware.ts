@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 /**
  * Runs on every request (see proxy.ts). Two jobs:
@@ -55,16 +56,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Already signed in but sitting on /login or /signup → send them on. Honour
-  // ?next= so an admin who was bounced from /admin lands back there, and
-  // default to the storefront otherwise. Only same-site paths, so this can't
-  // be used as an open redirect.
+  // Already signed in but sitting on /login or /signup → send them on,
+  // honouring ?next= so an admin bounced from /admin lands back there.
+  //
+  // Built with the URL constructor rather than by assigning to url.pathname:
+  // that setter percent-encodes "?", so /shop?collection=wishlist became
+  // /shop%3Fcollection=wishlist — a path that does not exist. Reachable in
+  // normal use, since the wishlist empty state links exactly that.
   if ((pathname === "/login" || pathname === "/signup") && user) {
-    const next = request.nextUrl.searchParams.get("next");
-    const url = request.nextUrl.clone();
-    url.pathname = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
-    url.search = "";
-    return NextResponse.redirect(url);
+    const next = safeRedirectPath(
+      request.nextUrl.searchParams.get("next"),
+      request.nextUrl.origin,
+    );
+    return NextResponse.redirect(new URL(next, request.nextUrl.origin));
   }
 
   return response;
