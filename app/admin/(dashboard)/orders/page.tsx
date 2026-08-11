@@ -28,9 +28,19 @@ function nextActions(status: AdminOrder["status"]) {
         { to: "cancelled", label: "Cancel", primary: false },
       ];
     case "paid":
-      return [{ to: "shipped", label: "Mark shipped", primary: true }];
+      // "Back to pending" is what makes the stock restore in 0014 reachable —
+      // without it a mistaken "Mark paid" permanently lowers the count, and a
+      // piece sitting in the studio eventually becomes unorderable.
+      return [
+        { to: "shipped", label: "Mark shipped", primary: true },
+        { to: "pending", label: "Back to pending", primary: false },
+        { to: "cancelled", label: "Cancel", primary: false },
+      ];
     case "shipped":
-      return [{ to: "delivered", label: "Mark delivered", primary: true }];
+      return [
+        { to: "delivered", label: "Mark delivered", primary: true },
+        { to: "paid", label: "Back to paid", primary: false },
+      ];
     default:
       return [];
   }

@@ -14,7 +14,16 @@ const label =
   "block text-label-caps font-label-caps uppercase tracking-wide text-on-surface-variant mb-1.5";
 
 type Line = { id: string; name: string; priceCents: number; quantity: number };
-type Placed = { orderNumber: number; totalCents: number; link: string };
+/** What the server actually recorded — not what the browser had in the basket. */
+type PlacedLine = { name: string; quantity: number; unit_price_cents: number };
+type Placed = {
+  orderNumber: number;
+  totalCents: number;
+  lines: PlacedLine[];
+  /** Lines the browser showed that the order did not include. */
+  dropped: string[];
+  link: string;
+};
 
 export function CheckoutForm() {
   const { lines, clear } = useCart();
@@ -101,16 +110,32 @@ export function CheckoutForm() {
       return;
     }
 
-    const row = (data as { order_number: number; total_cents: number }[])?.[0];
+    const row = (
+      data as {
+        order_number: number;
+        total_cents: number;
+        lines: PlacedLine[] | null;
+      }[]
+    )?.[0];
     if (!row) {
       setError("Something went wrong placing the order. Please try again.");
       return;
     }
 
+    // Render from what the order actually contains, never from the basket.
+    // place_whatsapp_order omits anything that sold out or was delisted
+    // between add-to-cart and checkout — showing the browser's version would
+    // list an item the total excludes and tell the studio to send it.
+    const placedLines = row.lines ?? [];
+    const placedNames = new Set(placedLines.map((l) => l.name));
+    const dropped = items
+      .map((i) => i.name)
+      .filter((name) => !placedNames.has(name));
+
     const message = [
       `Hi! I'd like to order #${row.order_number}`,
       "",
-      ...items.map((i) => `• ${i.quantity} × ${i.name}`),
+      ...placedLines.map((l) => `• ${l.quantity} × ${l.name}`),
       "",
       `Total: ${formatPrice(row.total_cents)}`,
       `Name: ${name}`,
@@ -122,6 +147,8 @@ export function CheckoutForm() {
     setPlaced({
       orderNumber: row.order_number,
       totalCents: row.total_cents,
+      lines: placedLines,
+      dropped,
       link: buildWhatsAppLink(message),
     });
   }
@@ -134,10 +161,43 @@ export function CheckoutForm() {
         <h2 className="font-headline-md text-headline-md text-primary mb-1">
           Order #{placed.orderNumber} received
         </h2>
-        <p className="text-body-md text-on-surface-variant mb-6">
-          {formatPrice(placed.totalCents)} · Send the message below and we&apos;ll
-          confirm your order and share payment details.
+        <p className="text-body-md text-on-surface-variant mb-4">
+          Send the message below and we&apos;ll confirm your order and share
+          payment details.
         </p>
+
+        {/* What was recorded, itemised — so the list and the total agree. */}
+        <ul className="text-left text-body-md border-y border-outline-variant/60 py-3 mb-4 space-y-1">
+          {placed.lines.map((l) => (
+            <li key={l.name} className="flex justify-between gap-3">
+              <span className="text-on-surface">
+                {l.quantity} × {l.name}
+              </span>
+              <span className="text-on-surface-variant whitespace-nowrap">
+                {formatPrice(l.unit_price_cents * l.quantity)}
+              </span>
+            </li>
+          ))}
+          <li className="flex justify-between gap-3 pt-1 font-headline-md text-primary">
+            <span>Total</span>
+            <span>{formatPrice(placed.totalCents)}</span>
+          </li>
+        </ul>
+
+        {/* Said plainly rather than left to be noticed: a piece can sell out
+            between adding it and checking out, and quietly shipping a shorter
+            order than the customer asked for is the worse surprise. */}
+        {placed.dropped.length > 0 && (
+          <p
+            className="text-body-md text-on-surface-variant bg-lemon-yellow/40 rounded-2xl px-4 py-3 mb-4 text-left"
+            role="status"
+          >
+            {placed.dropped.length === 1
+              ? `${placed.dropped[0]} sold out while you were ordering, so it isn't included.`
+              : `${placed.dropped.join(", ")} sold out while you were ordering, so they aren't included.`}{" "}
+            Message us if you&apos;d like one made.
+          </p>
+        )}
         <a
           href={placed.link}
           target="_blank"
