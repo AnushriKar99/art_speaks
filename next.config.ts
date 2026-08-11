@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // The e2e suite builds into its own directory so it cannot clobber the .next
+  // a running `next dev` is serving from — doing that leaves the dev server
+  // without its manifests and every route 500s until it is restarted.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   images: {
     // Next generates one variant per width in these lists, and re-downloads
     // the full original for each one — so every width you don't need is a
