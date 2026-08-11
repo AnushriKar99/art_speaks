@@ -3,8 +3,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { EMAIL_ADDRESS, INSTAGRAM_URL, buildWhatsAppLink } from "@/lib/contact";
 
-const LOGO_SRC =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuC8CWM2T1pTe7YX52FI6aJ1fk6IJKoeTIHagzarw8fUhcbo-iUruIDsKjtq0woXN33YpVzqYDSv_h_AfKy8LtVi1jKOCyQABEEYdZEB7jyeO0efhofGcXrP4bMUXckCN7vUIayJUKJJniIGautEliibwhuA4lclUKsrca1EGYSofv9W-Fua8uaFH1TIyZTEBYiuTTIblSCkS26uCfkTre3mZK5IKtXiFaDsundLMx56ldX6_Ysm-aGJazGROn2WmICpZzE";
+const LOGO_SRC = "/brand/logo.jpg";
 
 export function SiteFooter() {
   return (
@@ -14,7 +13,7 @@ export function SiteFooter() {
         <div className="flex items-center gap-3">
           <Image
             alt="Art Speaks logo"
-            className="w-12 h-12 rounded-full border-4 border-candy-pink shadow-md"
+            className="w-12 h-12 rounded-full object-cover border-4 border-candy-pink shadow-md"
             src={LOGO_SRC}
             width={48}
             height={48}
