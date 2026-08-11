@@ -1,21 +1,11 @@
 
 -- ####################################################################
--- ### Storage policies — run AFTER creating the `product-images` bucket
+-- ### Storage
 -- ####################################################################
-
--- Product photos are meant to be seen, so public read. Writes are gated on
--- the is_admin() helper from 0003, so only a flagged admin can upload.
-drop policy if exists "product images are public" on storage.objects;
-create policy "product images are public"
-  on storage.objects for select
-  using (bucket_id = 'product-images');
-
-drop policy if exists "admins manage product images" on storage.objects;
-create policy "admins manage product images"
-  on storage.objects for all
-  using (bucket_id = 'product-images' and public.is_admin())
-  with check (bucket_id = 'product-images' and public.is_admin());
-
+-- Nothing to do here — the product-images bucket and its policies are created
+-- by migration 0013, included above. They used to live in this footer, which
+-- meant a project rebuilt from migrations/ alone got a public bucket with no
+-- write policy.
 
 -- ####################################################################
 -- ### Check it worked
