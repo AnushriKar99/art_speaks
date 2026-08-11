@@ -29,6 +29,7 @@ FILES=(
   supabase/migrations/0010_whatsapp_orders.sql
   supabase/migrations/0011_place_whatsapp_order.sql
   supabase/migrations/0012_fix_place_whatsapp_order.sql
+  supabase/migrations/0013_storage_policies.sql
   supabase/seed_categories.sql
   supabase/seed_products_bookmarks.sql
 )

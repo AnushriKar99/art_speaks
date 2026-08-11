@@ -12,15 +12,13 @@
 --  This file is GENERATED. Do not edit it by hand — change the migration or
 --  seed it came from and regenerate, or the two will drift apart.
 --
---  AFTER running this, four things still need doing by hand:
+--  AFTER running this, three things still need doing by hand:
 --    1. Auth → Users → Add user (auto-confirm), then:
 --         update public.profiles set is_admin = true
 --         where id = (select id from auth.users where email = 'YOUR@EMAIL');
---    2. Storage → New bucket named exactly `product-images`, marked Public.
---       Then run the storage policies at the very bottom of this file.
---    3. Auth → URL Configuration: set Site URL, and allow-list
+--    2. Auth → URL Configuration: set Site URL, and allow-list
 --       <site>/auth/confirm as a redirect URL.
---    4. Auth → Email Templates → Confirm signup, replace the link with:
+--    3. Auth → Email Templates → Confirm signup, replace the link with:
 --         {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/
 --       (the default template's PKCE code only works in the browser that
 --        signed up, so cross-device confirmation fails without this)
@@ -1340,6 +1338,60 @@ grant execute on function public.place_whatsapp_order(jsonb, text, text, jsonb, 
 
 
 -- ####################################################################
+-- ### supabase/migrations/0013_storage_policies.sql
+-- ####################################################################
+
+-- ============================================================
+-- The product-images bucket, and the policies protecting it.
+--
+-- These existed only in setup-footer.sql.in, which feeds the generated
+-- SETUP_NEW_PROJECT.sql — so a project rebuilt from migrations/ alone got a
+-- PUBLIC BUCKET WITH NO WRITE POLICY. Raised in review on PR #1.
+--
+-- That matters more here than it would elsewhere. lib/images/upload.ts calls
+-- Supabase Storage straight from the browser with the visitor's own session:
+-- it never passes through a Server Action, so requireAdmin() is never
+-- consulted, and the middleware only decides which pages render — not which
+-- Storage endpoints a token may call.
+--
+-- RLS on storage.objects is therefore the ONLY thing standing between a
+-- signed-up customer and write access to the bucket. It belongs in the schema
+-- history, not in a generated file.
+--
+-- Idempotent: safe to run more than once.
+-- ============================================================
+
+-- ---------- the bucket ----------
+-- Created here rather than by hand in the dashboard, so a project can be
+-- rebuilt from migrations without a manual step that is easy to forget.
+-- Public read: product photos are meant to be seen, and signed URLs would add
+-- expiry handling for no benefit while breaking next/image caching.
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', true)
+on conflict (id) do update set public = true;
+
+-- ---------- read ----------
+drop policy if exists "product images are public" on storage.objects;
+create policy "product images are public"
+  on storage.objects for select
+  using (bucket_id = 'product-images');
+
+-- ---------- write ----------
+-- Gated on the same is_admin() helper the table policies use, so there is one
+-- definition of "is an admin" rather than two that can drift.
+drop policy if exists "admins manage product images" on storage.objects;
+create policy "admins manage product images"
+  on storage.objects for all
+  using (bucket_id = 'product-images' and public.is_admin())
+  with check (bucket_id = 'product-images' and public.is_admin());
+
+-- ---------- check ----------
+--   select policyname, cmd from pg_policies
+--   where schemaname = 'storage' and tablename = 'objects';
+-- Two rows. None means the bucket is open to any authenticated caller.
+
+
+-- ####################################################################
 -- ### supabase/seed_categories.sql
 -- ####################################################################
 
@@ -1440,22 +1492,12 @@ on conflict (slug) do update set
 --   from public.products order by name;
 
 -- ####################################################################
--- ### Storage policies — run AFTER creating the `product-images` bucket
+-- ### Storage
 -- ####################################################################
-
--- Product photos are meant to be seen, so public read. Writes are gated on
--- the is_admin() helper from 0003, so only a flagged admin can upload.
-drop policy if exists "product images are public" on storage.objects;
-create policy "product images are public"
-  on storage.objects for select
-  using (bucket_id = 'product-images');
-
-drop policy if exists "admins manage product images" on storage.objects;
-create policy "admins manage product images"
-  on storage.objects for all
-  using (bucket_id = 'product-images' and public.is_admin())
-  with check (bucket_id = 'product-images' and public.is_admin());
-
+-- Nothing to do here — the product-images bucket and its policies are created
+-- by migration 0013, included above. They used to live in this footer, which
+-- meant a project rebuilt from migrations/ alone got a public bucket with no
+-- write policy.
 
 -- ####################################################################
 -- ### Check it worked
