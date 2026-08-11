@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Category, Product } from "@/lib/types";
@@ -112,6 +113,17 @@ function toProduct(row: ProductRow): Product {
  */
 export const CATEGORIES_TAG = "categories";
 
+/**
+ * Product reads are cached and dropped whenever the admin saves — see
+ * updateTag(PRODUCTS_TAG) in the admin Server Actions.
+ *
+ * They were left uncached originally because stale product data is worse than
+ * a slow page. Tag invalidation removes that trade-off: an edit clears the
+ * cache immediately, so the only staleness window is a change made directly in
+ * the database, which the short revalidate window covers.
+ */
+export const PRODUCTS_TAG = "products";
+
 const loadCategories = unstable_cache(
   async (): Promise<Category[]> => {
     const supabase = createPublicClient();
@@ -145,7 +157,8 @@ export async function getCategoryBySlug(
   return categories.find((c) => c.slug === slug);
 }
 
-export async function getAllProducts(): Promise<Product[]> {
+export const getAllProducts = unstable_cache(
+  async (): Promise<Product[]> => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
@@ -157,11 +170,13 @@ export async function getAllProducts(): Promise<Product[]> {
     return [];
   }
   return (data as unknown as ProductRow[]).map(toProduct);
-}
+  },
+  ["all-products"],
+  { revalidate: 300, tags: [PRODUCTS_TAG] },
+);
 
-export async function getProductsByCategory(slug?: string): Promise<Product[]> {
-  if (!slug) return getAllProducts();
-
+const loadProductsByCategory = unstable_cache(
+  async (slug: string): Promise<Product[]> => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
@@ -179,6 +194,13 @@ export async function getProductsByCategory(slug?: string): Promise<Product[]> {
   return (data as unknown as ProductRow[])
     .map(toProduct)
     .filter((p) => p.categorySlug === slug);
+  },
+  ["products-by-category"],
+  { revalidate: 300, tags: [PRODUCTS_TAG] },
+);
+
+export async function getProductsByCategory(slug?: string): Promise<Product[]> {
+  return slug ? loadProductsByCategory(slug) : getAllProducts();
 }
 
 /**
@@ -188,7 +210,8 @@ export async function getProductsByCategory(slug?: string): Promise<Product[]> {
  * rather than rendering an empty shell — a product that never existed and a
  * product that is delisted should both be a 404, not a 200 with nothing on it.
  */
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+const loadProductBySlug = unstable_cache(
+  async (slug: string): Promise<Product | null> => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
@@ -201,7 +224,18 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     return null;
   }
   return data ? toProduct(data as unknown as ProductRow) : null;
-}
+  },
+  ["product-by-slug"],
+  { revalidate: 300, tags: [PRODUCTS_TAG] },
+);
+
+/**
+ * cache() on top of the tag cache: generateMetadata and the page body both ask
+ * for the same slug in one request, and this makes the second ask free.
+ */
+export const getProductBySlug = cache(
+  (slug: string): Promise<Product | null> => loadProductBySlug(slug),
+);
 
 /** Other pieces from the same category, for the bottom of a product page. */
 export async function getRelatedProducts(
@@ -214,7 +248,8 @@ export async function getRelatedProducts(
   return all.filter((p) => p.slug !== excludeSlug).slice(0, limit);
 }
 
-export async function getBestSellers(): Promise<Product[]> {
+export const getBestSellers = unstable_cache(
+  async (): Promise<Product[]> => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
@@ -227,9 +262,13 @@ export async function getBestSellers(): Promise<Product[]> {
     return [];
   }
   return (data as unknown as ProductRow[]).map(toProduct);
-}
+  },
+  ["best-sellers"],
+  { revalidate: 300, tags: [PRODUCTS_TAG] },
+);
 
-export async function getNewArrivals(): Promise<Product[]> {
+export const getNewArrivals = unstable_cache(
+  async (): Promise<Product[]> => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
@@ -242,7 +281,10 @@ export async function getNewArrivals(): Promise<Product[]> {
     return [];
   }
   return (data as unknown as ProductRow[]).map(toProduct);
-}
+  },
+  ["new-arrivals"],
+  { revalidate: 300, tags: [PRODUCTS_TAG] },
+);
 
 /**
  * PostgREST builds its `or=(...)` filter from a comma-separated string, so a
