@@ -89,7 +89,7 @@ export default async function SalesPage() {
             </p>
             <div className="rounded-[2rem] border-2 border-candy-pink/30 bg-surface-container-lowest p-6 space-y-3">
               {bestSellers.map((b) => (
-                <div key={b.name}>
+                <div key={b.key}>
                   <div className="flex justify-between gap-3 text-body-md mb-1">
                     <span className="text-on-surface">{b.name}</span>
                     <span className="text-on-surface-variant whitespace-nowrap">

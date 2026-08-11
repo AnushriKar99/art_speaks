@@ -9,6 +9,15 @@ import type { AdminProduct } from "@/lib/data/admin";
 import type { Category } from "@/lib/types";
 import type { ProductFormState } from "@/app/admin/(dashboard)/inventory/actions";
 
+/** Mirrors slugify() in the Server Action, so the preview matches what is saved. */
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 const field =
   "w-full rounded-2xl border-2 border-outline-variant bg-white px-4 py-3 text-body-md text-on-surface focus:border-primary focus:outline-none";
 const label =
@@ -33,6 +42,8 @@ export function ProductForm({
 
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [slug, setSlug] = useState(product?.slug ?? "");
+  // "" cannot tell "not typed in yet" from "deliberately cleared", so track it.
+  const [slugTouched, setSlugTouched] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -69,11 +80,12 @@ export function ProductForm({
             defaultValue={product?.name}
             className={field}
             onChange={(e) => {
-              // Only auto-fill the address while creating, and only until it
-              // has been touched — renaming a listed piece would otherwise
-              // silently break its existing links.
-              if (!product && !slug) return;
-              if (!product) setSlug(e.target.value);
+              // Auto-fill the address from the name while creating, and only
+              // until the field is touched. Never when editing: changing a
+              // listed piece's address silently breaks every link already
+              // shared for it.
+              if (product || slugTouched) return;
+              setSlug(slugify(e.target.value));
             }}
           />
         </div>
@@ -86,7 +98,10 @@ export function ProductForm({
             id="slug"
             name="slug"
             value={slug}
-            onChange={(e) => setSlug(e.target.value)}
+            onChange={(e) => {
+              setSlugTouched(true);
+              setSlug(e.target.value);
+            }}
             placeholder="left blank, this is made from the name"
             className={field}
           />

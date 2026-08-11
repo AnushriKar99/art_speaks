@@ -8,8 +8,9 @@
 #
 #   ./supabase/build-setup.sh
 #
-# Note: seed.sql is deliberately NOT included. It truncates half the database
-# and exists only as a reference for the old mock data.
+# Note: the seeds listed below are the only ones. An older seed.sql was deleted
+# — it truncated six tables including orders, while its header claimed it was
+# "safe to re-run".
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

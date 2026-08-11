@@ -50,7 +50,20 @@ function parse(raw: string | null): CartLine[] {
 }
 
 function getSnapshot(): CartLine[] {
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  // Reading localStorage can THROW, not just return null — Safari with
+  // cross-site tracking restrictions, Firefox strict mode, some webviews and
+  // corporate policies all raise SecurityError on access.
+  //
+  // This is the useSyncExternalStore snapshot, so a throw here propagates
+  // during render and takes down every page that mounts the cart provider,
+  // not merely the cart. A visitor with storage blocked would see a blank
+  // error page on the homepage.
+  let raw: string | null = null;
+  try {
+    raw = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return EMPTY;
+  }
   if (raw !== cachedRaw) {
     cachedRaw = raw;
     cache = parse(raw);
