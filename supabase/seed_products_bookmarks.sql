@@ -4,8 +4,7 @@
 -- Safe to re-run: `on conflict (slug) do update` refreshes an existing row
 -- rather than erroring or duplicating. Edit a price here, paste again, done.
 --
--- Does NOT touch categories, orders or anything else — unlike seed.sql, which
--- truncates half the database and should not be run against live data.
+-- Does NOT touch categories, orders or anything else.
 --
 -- Photos are deliberately empty ('{}'). The storefront shows a 🥺 placeholder
 -- for products without one, so listings can go up before the shoot. Add them

@@ -202,6 +202,9 @@ export interface MonthlySales {
 }
 
 export interface BestSeller {
+  /** The key the aggregation used — carried through so the view keys on the
+   *  same value rather than re-deriving one that can collide. */
+  key: string;
   productId: string | null;
   name: string;
   units: number;
@@ -292,6 +295,7 @@ export async function getSalesSummary(): Promise<SalesSummary> {
     // rather than collapsing every orphaned line into one row.
     const key = l.product_id ?? `name:${l.product_name}`;
     const existing = byProduct.get(key) ?? {
+      key,
       productId: l.product_id,
       name: l.product_name,
       units: 0,
