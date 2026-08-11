@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProductImage } from "@/components/ui/product-image";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
@@ -30,17 +30,52 @@ function ProductModalContent({
   const { add } = useCart();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape and lock body scroll while open.
+  // Escape, body scroll lock, and the focus handling a dialog needs.
+  //
+  // Without the last part, a keyboard user activates a card, the modal
+  // appears, and focus is still behind it on the page — so Tab walks the
+  // catalogue underneath while a dialog they cannot reach sits on top.
   useEffect(() => {
+    const returnFocusTo = document.activeElement as HTMLElement | null;
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+
+      // Trap Tab inside the panel, so focus cannot wander onto the page behind.
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
+    // Move focus in, so a screen reader announces the dialog and Tab starts
+    // from inside it.
+    panelRef.current?.focus();
+
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
+      // Put focus back where it came from, or it lands on <body> and the
+      // reader loses its place in the grid.
+      returnFocusTo?.focus?.();
     };
   }, [onClose]);
 
@@ -52,7 +87,14 @@ function ProductModalContent({
         className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-surface-bright w-full max-w-2xl max-h-[90vh] md:max-h-[751px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border-4 border-primary">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-modal-title"
+        tabIndex={-1}
+        className="relative bg-surface-bright w-full max-w-2xl max-h-[90vh] md:max-h-[751px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border-4 border-primary outline-none"
+      >
         <button
           className="absolute top-4 right-4 z-[110] bg-white w-10 h-10 flex items-center justify-center rounded-full text-primary shadow-md hover:scale-110 active:scale-90 transition-all border-2 border-primary"
           onClick={onClose}
@@ -90,7 +132,10 @@ function ProductModalContent({
           <div className="p-8 pb-32">
             <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
               <div>
-                <h2 className="font-display-lg text-display-lg-mobile text-primary mb-1">
+                <h2
+                  id="product-modal-title"
+                  className="font-display-lg text-display-lg-mobile text-primary mb-1"
+                >
                   {product.name}
                 </h2>
                 <p className="font-headline-md text-headline-md text-on-surface-variant">

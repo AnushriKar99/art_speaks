@@ -26,10 +26,37 @@ const hanken = Hanken_Grotesk({
   display: "swap",
 });
 
+/**
+ * Read from the environment so a deploy sets it once, rather than a hardcoded
+ * domain drifting out of date. Falls back to localhost for development, where
+ * an absolute URL is only needed so relative OG images resolve.
+ */
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  // Without metadataBase, relative OG image paths are dropped rather than
+  // resolved, and the card renders with no picture.
+  metadataBase: new URL(SITE_URL),
   title: "Art Speaks | Handcrafted Artistic Curations",
   description:
     "A handcrafted art studio. Small items, big feelings — phone charms, worry stones, bookmarks and custom pieces made with love.",
+  // The studio sells through WhatsApp and Instagram, so a pasted link IS the
+  // shopfront window. Without these it renders as a bare blue link.
+  openGraph: {
+    type: "website",
+    siteName: "Art Speaks",
+    title: "Art Speaks | Handcrafted Artistic Curations",
+    description:
+      "Small items, big feelings — phone charms, worry stones, bookmarks and custom pieces, handmade in a tiny studio.",
+    images: [{ url: "/images/journey.png", width: 896, height: 1195 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Art Speaks | Handcrafted Artistic Curations",
+    description:
+      "Small items, big feelings — handmade phone charms, worry stones and bookmarks.",
+    images: ["/images/journey.png"],
+  },
 };
 
 export default function RootLayout({
