@@ -6,6 +6,7 @@ import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { useCart } from "@/lib/cart/cart-store";
+import Link from "next/link";
 
 export function ProductModal({
   product,
@@ -168,6 +169,16 @@ function ProductModalContent({
             Add to Cart
           </button>
         </div>
+        <p className="mt-4 text-center">
+          {/* The modal has no URL of its own, so this is how a customer gets a
+              link they can paste into a WhatsApp reply or an Instagram story. */}
+          <Link
+            href={`/shop/${product.slug}`}
+            className="text-body-md text-primary underline hover:no-underline"
+          >
+            Open full page
+          </Link>
+        </p>
       </div>
     </div>
   );
