@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
+import { safeRedirectPath, SITE_ORIGIN } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Art Speaks | Sign in",
@@ -20,9 +21,10 @@ export default async function LoginPage({
 }) {
   const { next, error, reason } = await searchParams;
 
-  // Only same-site paths. Without this check, /login?next=https://evil.example
-  // would turn our own login into an open redirect.
-  const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  // Resolved against our own origin — see lib/safe-redirect. A naive
+  // startsWith("/") test lets `/\evil.com` through, which the URL parser
+  // resolves off-site.
+  const destination = safeRedirectPath(next, SITE_ORIGIN);
 
   return (
     <main className="min-h-screen flex items-center justify-center px-margin-mobile bg-background">
