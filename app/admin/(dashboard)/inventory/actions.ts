@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import { PRODUCTS_TAG } from "@/lib/data/products";
 
 export type ProductFormState = { error: string } | null;
 
@@ -59,6 +60,9 @@ function parseForm(formData: FormData) {
 
 /** Both writes touch the same pages; keeping it in one place avoids missing one. */
 function revalidateStorefront(slug: string) {
+  // Product reads are cached by tag — without this an edit would not appear
+  // on the storefront until the revalidate window expired.
+  updateTag(PRODUCTS_TAG);
   revalidatePath("/");
   revalidatePath("/shop");
   revalidatePath("/admin/inventory");

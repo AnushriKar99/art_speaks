@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import { PRODUCTS_TAG } from "@/lib/data/products";
 
 export type SaleLine = {
   productId: string;
@@ -51,6 +52,7 @@ export async function recordOfflineSale(
   }
 
   // Stock changed, so anything showing a count is now stale.
+  updateTag(PRODUCTS_TAG);
   revalidatePath("/admin/sales/new");
   revalidatePath("/admin/inventory");
   revalidatePath("/admin/sales");

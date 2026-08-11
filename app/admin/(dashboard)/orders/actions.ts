@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/data/admin";
+import { PRODUCTS_TAG } from "@/lib/data/products";
 
 const ALLOWED: OrderStatus[] = [
   "pending",
@@ -39,6 +40,8 @@ export async function setOrderStatus(formData: FormData): Promise<void> {
     return;
   }
 
+  // Confirming an order deducts stock, so cached product reads are stale.
+  updateTag(PRODUCTS_TAG);
   revalidatePath("/admin/orders");
   // Stock may have moved, so anything showing a count is now stale.
   revalidatePath("/admin/inventory");
