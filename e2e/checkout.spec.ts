@@ -35,7 +35,9 @@ test("an order can be placed and hands off to WhatsApp", async ({ page }) => {
   await expect(link).toBeVisible();
   const href = await link.getAttribute("href");
   expect(href).toContain("whatsapp.com");
-  expect(decodeURIComponent(href ?? "")).toMatch(/order #\d+/i);
+  // The studio distinguishes an order from a custom-order enquiry by this
+  // prefix, so assert the prefix, not merely that a number appears.
+  expect(decodeURIComponent(href ?? "")).toMatch(/^[\s\S]*Order: #\d+/);
 });
 
 test("the basket is emptied once the order is recorded", async ({ page }) => {

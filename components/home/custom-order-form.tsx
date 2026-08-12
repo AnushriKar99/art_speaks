@@ -62,7 +62,9 @@ export function CustomOrderForm() {
                 const formData = new FormData(e.currentTarget);
                 const category = formData.get("category");
                 const description = formData.get("description");
-                const message = `Category: ${category}\nDescription: ${description}`;
+                // Prefixed so the studio can tell an enquiry from an order at a
+                // glance — both arrive in the same WhatsApp thread.
+                const message = `Custom order request:\n\nCategory: ${category}\nDescription: ${description}`;
                 window.open(buildWhatsAppLink(message), "_blank", "noopener,noreferrer");
                 setSubmitted(true);
               }}

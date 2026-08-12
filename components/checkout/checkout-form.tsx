@@ -133,7 +133,10 @@ export function CheckoutForm() {
       .filter((name) => !placedNames.has(name));
 
     const message = [
-      `Hi! I'd like to order #${row.order_number}`,
+      // Prefixed to match the custom-order enquiry, so the two are
+      // distinguishable in one thread. The old greeting line named the same
+      // order number, so it goes rather than saying it twice.
+      `Order: #${row.order_number}`,
       "",
       ...placedLines.map((l) => `• ${l.quantity} × ${l.name}`),
       "",
