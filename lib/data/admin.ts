@@ -226,9 +226,15 @@ const COUNTED = ["paid", "shipped", "delivered"];
 /**
  * Everything the Sales page shows.
  *
- * Monthly figures come from the monthly_sales view (0006), which already
- * applies the paid-orders filter — so "sales" means the same thing here as
- * everywhere else rather than being re-derived per screen.
+ * Monthly figures come from the sales_by_month view (0016): monthly_sales
+ * (0006) computed live from orders, unioned with the hand-entered figures from
+ * before the shop was built. The paid-orders filter lives in that view, so
+ * "sales" means the same thing here as everywhere else rather than being
+ * re-derived per screen.
+ *
+ * Historical rows report order_count 0 — the number of orders behind those
+ * totals is genuinely unknown, so they add revenue without inflating the
+ * Orders stat.
  *
  * Best sellers are aggregated in JS. With a few hundred line items that is
  * cheaper than a round trip to a dedicated view; if this ever gets slow, the
@@ -239,7 +245,7 @@ export async function getSalesSummary(): Promise<SalesSummary> {
 
   const [monthly, items] = await Promise.all([
     supabase
-      .from("monthly_sales")
+      .from("sales_by_month")
       .select("month, channel, order_count, revenue_cents")
       .order("month"),
     supabase
