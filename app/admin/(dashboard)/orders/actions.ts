@@ -40,12 +40,12 @@ export async function setOrderStatus(formData: FormData): Promise<void> {
     return;
   }
 
-  // Confirming an order deducts stock, so cached product reads are stale.
+  // Confirming or reverting an order moves stock, so the cached storefront
+  // reads are stale — the tag covers all of them.
+  //
+  // The admin pages are not listed because they are not cached: they read
+  // through the session client, which cannot be, so they refetch on every
+  // visit anyway. Revalidating their paths was pure cost.
   updateTag(PRODUCTS_TAG);
   revalidatePath("/admin/orders");
-  // Stock may have moved, so anything showing a count is now stale.
-  revalidatePath("/admin/inventory");
-  revalidatePath("/admin/sales/new");
-  revalidatePath("/shop");
-  revalidatePath("/");
 }

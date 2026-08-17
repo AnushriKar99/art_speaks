@@ -12,9 +12,11 @@ import { Icon } from "@/components/ui/icon";
  */
 export async function AccountMenu() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Verified locally rather than at the Auth server — see lib/supabase/auth.ts.
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims?.sub
+    ? { id: claims.claims.sub as string, email: claims.claims.email as string | undefined }
+    : null;
 
   if (!user) {
     return (

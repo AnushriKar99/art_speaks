@@ -35,11 +35,16 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: getUser() revalidates the token with Supabase (don't trust
-  // getSession() here). This also refreshes the cookies via setAll above.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims(), not getSession(). getSession() trusts the cookie and is
+  // forgeable; getClaims() verifies the signature and expiry — locally,
+  // against the project's published JWKS, so unlike getUser() it costs no
+  // round trip. This runs on every request, so that mattered: it was over a
+  // second per page on a slow link.
+  //
+  // The call still refreshes the cookies via setAll above when the token is
+  // near expiry.
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims?.sub ? { id: claims.claims.sub } : null;
 
   const { pathname, search } = request.nextUrl;
 

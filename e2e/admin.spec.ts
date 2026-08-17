@@ -64,8 +64,13 @@ test.describe("signed in", () => {
     const before = await page.locator("tbody tr").first().innerText();
 
     await page.goto("/admin/sales/new");
-    const tile = page.locator("button[aria-label^='Add ']").first();
-    if ((await tile.count()) === 0) test.skip(true, "nothing in stock to sell");
+    // Must be an ENABLED tile: a sold-out piece renders disabled, and clicking
+    // it does nothing — which reads as "stock did not change" and fails the
+    // test for the wrong reason. Repeated runs exhaust stock, so this matters.
+    const tile = page.locator("button[aria-label^='Add ']:not([disabled])").first();
+    if ((await tile.count()) === 0) {
+      test.skip(true, "every piece is out of stock in the test project");
+    }
 
     await tile.click();
     await expect(page.getByText(/^1 item$/)).toBeVisible();

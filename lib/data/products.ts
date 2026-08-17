@@ -414,15 +414,14 @@ async function searchProductsFuzzy(term: string): Promise<Product[]> {
  */
 export async function getWishlist(): Promise<Product[]> {
   const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
+  if (!userId) return [];
 
   const { data, error } = await supabase
     .from("wishlist")
     .select(`products(${PRODUCT_COLUMNS})`)
-    .eq("customer_id", user.id)
+    .eq("customer_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) {
