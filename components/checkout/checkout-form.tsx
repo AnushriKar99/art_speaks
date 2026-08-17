@@ -126,11 +126,28 @@ export function CheckoutForm() {
     // place_whatsapp_order omits anything that sold out or was delisted
     // between add-to-cart and checkout — showing the browser's version would
     // list an item the total excludes and tell the studio to send it.
-    const placedLines = row.lines ?? [];
+    //
+    // If `lines` is absent the database is running a build of the function
+    // from before migration 0014, which returned only the number and total.
+    // Treating that as "nothing was recorded" told every customer their whole
+    // basket had sold out, on an order that had in fact been placed correctly.
+    // Fall back to the basket instead: slightly stale beats confidently wrong,
+    // and the order number and total still come from the server.
+    const returnedLines = Array.isArray(row.lines) ? row.lines : null;
+    const placedLines: PlacedLine[] =
+      returnedLines ??
+      items.map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        unit_price_cents: i.priceCents,
+      }));
+
+    // Only claim something was dropped when the server actually told us what
+    // it kept. Without that list there is nothing to compare against.
     const placedNames = new Set(placedLines.map((l) => l.name));
-    const dropped = items
-      .map((i) => i.name)
-      .filter((name) => !placedNames.has(name));
+    const dropped = returnedLines
+      ? items.map((i) => i.name).filter((name) => !placedNames.has(name))
+      : [];
 
     const message = [
       // Prefixed to match the custom-order enquiry, so the two are
