@@ -9,6 +9,10 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // The e2e build output — same generated code as .next, different directory
+    // because Playwright builds beside a running dev server. Without this every
+    // `npm run lint` drowns in ~450 errors from compiled bundles.
+    ".next-e2e/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
