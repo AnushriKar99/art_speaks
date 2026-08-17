@@ -1,9 +1,59 @@
+import { Suspense } from "react";
+import Link from "next/link";
 import { getAdminOrders, type AdminOrder } from "@/lib/data/admin";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { setOrderStatus } from "./actions";
 
 export const metadata = { title: "Art Speaks | Orders" };
+
+/**
+ * The filter bar.
+ *
+ * "Live" is every order still moving — placed but not finished with. Pending is
+ * a subset of it, kept separate because it is the one status that needs the
+ * studio to do something. Cancelled is the opposite: a record, not work.
+ *
+ * All is the default so the page still shows everything to someone who has not
+ * noticed the filter — a delivered order silently missing would read as data
+ * loss rather than a view.
+ */
+const FILTERS = [
+  {
+    key: "all",
+    label: "All",
+    empty: "No orders yet. They appear here as soon as someone checks out.",
+  },
+  {
+    key: "live",
+    label: "Live",
+    empty: "Nothing in flight — every order is delivered or cancelled.",
+  },
+  { key: "pending", label: "Pending", empty: "No orders waiting on you. 🎉" },
+  { key: "cancelled", label: "Cancelled", empty: "No cancelled orders." },
+] as const;
+
+type FilterKey = (typeof FILTERS)[number]["key"];
+
+const LIVE: AdminOrder["status"][] = ["pending", "paid", "shipped"];
+
+function matches(key: FilterKey, status: AdminOrder["status"]): boolean {
+  switch (key) {
+    case "live":
+      return LIVE.includes(status);
+    case "pending":
+      return status === "pending";
+    case "cancelled":
+      return status === "cancelled";
+    default:
+      return true;
+  }
+}
+
+/** An unknown ?status= falls back to All rather than showing an empty page. */
+function parseFilter(raw: string | undefined): FilterKey {
+  return FILTERS.find((f) => f.key === raw)?.key ?? "all";
+}
 
 const CHANNEL_LABEL: Record<AdminOrder["channel"], string> = {
   whatsapp: "WhatsApp",
@@ -54,30 +104,96 @@ function formatAddress(a: Record<string, string> | null): string {
     .join(", ");
 }
 
-export default async function OrdersPage() {
+/**
+ * Stands in while the orders query is in flight.
+ *
+ * Shaped like the real thing — a chip row and three cards — so the page does
+ * not jump when the data lands. Sized in the same rhythm rather than measured
+ * exactly; close is what stops the eye noticing.
+ */
+function OrdersSkeleton() {
+  return (
+    <div aria-hidden className="animate-pulse">
+      <div className="h-5 w-40 rounded-full bg-surface-container-high mb-4" />
+      <div className="flex flex-wrap gap-2 mb-6">
+        {FILTERS.map((f) => (
+          <div
+            key={f.key}
+            className="h-10 w-24 rounded-full bg-surface-container-high"
+          />
+        ))}
+      </div>
+      <div className="space-y-4">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-40 rounded-[2rem] border-2 border-candy-pink/20 bg-surface-container-low/60"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Everything that needs the database.
+ *
+ * Split out from the page so it can sit behind a Suspense boundary: the
+ * heading and the studio chrome paint immediately, and this streams in when
+ * the query returns. On a slow link that is the difference between a blank
+ * page for half a second and a page that is simply still filling in.
+ */
+async function OrderList({ active }: { active: FilterKey }) {
+  // One query for every order, filtered here rather than in the database: the
+  // chips carry counts, so all four groups are needed on every render anyway.
   const orders = await getAdminOrders();
-  const awaiting = orders.filter((o) => o.status === "pending").length;
+  const counts = Object.fromEntries(
+    FILTERS.map((f) => [f.key, orders.filter((o) => matches(f.key, o.status)).length]),
+  ) as Record<FilterKey, number>;
+
+  const shown = orders.filter((o) => matches(active, o.status));
+  const emptyMessage = FILTERS.find((f) => f.key === active)!.empty;
 
   return (
     <>
-      <h1 className="font-headline-md text-headline-lg text-primary mb-1">
-        Orders
-      </h1>
-      <p className="text-body-md text-on-surface-variant mb-6">
+      <p className="text-body-md text-on-surface-variant mb-4">
         {orders.length} {orders.length === 1 ? "order" : "orders"}
-        {awaiting > 0 ? ` · ${awaiting} waiting on you` : ""}
+        {counts.pending > 0 ? ` · ${counts.pending} waiting on you` : ""}
       </p>
 
-      {orders.length === 0 ? (
+      <nav aria-label="Filter orders" className="flex flex-wrap gap-2 mb-6">
+        {FILTERS.map((f) => {
+          const on = f.key === active;
+          return (
+            <Link
+              key={f.key}
+              href={f.key === "all" ? "/admin/orders" : `/admin/orders?status=${f.key}`}
+              aria-current={on ? "page" : undefined}
+              className={
+                on
+                  ? "rounded-full bg-primary text-on-primary font-headline-md px-4 py-2 text-body-md"
+                  : "rounded-full border-2 border-outline-variant px-4 py-2 text-body-md text-on-surface-variant hover:border-primary hover:text-primary transition-colors"
+              }
+            >
+              {f.label}
+              <span className={on ? "ml-2 opacity-80" : "ml-2 text-outline"}>
+                {counts[f.key]}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {shown.length === 0 ? (
         <div className="rounded-[2rem] border-2 border-dashed border-outline-variant bg-surface-container-low/60 p-10 text-center">
           <Icon name="receipt_long" className="text-[40px] text-outline" />
           <p className="text-body-md text-on-surface-variant mt-3">
-            No orders yet. They appear here as soon as someone checks out.
+            {emptyMessage}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((o) => {
+          {shown.map((o) => {
             const address = formatAddress(o.address);
             return (
               <article
@@ -191,6 +307,29 @@ export default async function OrdersPage() {
           })}
         </div>
       )}
+    </>
+  );
+}
+
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const { status: rawFilter } = await searchParams;
+  const active = parseFilter(rawFilter);
+
+  return (
+    <>
+      <h1 className="font-headline-md text-headline-lg text-primary mb-1">
+        Orders
+      </h1>
+
+      {/* keyed on the filter so switching chips shows the skeleton again
+          rather than leaving the previous list on screen looking live */}
+      <Suspense key={active} fallback={<OrdersSkeleton />}>
+        <OrderList active={active} />
+      </Suspense>
     </>
   );
 }
