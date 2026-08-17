@@ -16,21 +16,15 @@ cd "$(dirname "$0")/.."
 
 OUT=supabase/setup_new_project.sql
 
+# Migrations are globbed, not listed. They were listed by hand until 0015,
+# which meant every new migration had to be added in two places and the bundle
+# silently stayed correct-looking while missing the newest file. The numbered
+# prefixes sort lexically, which is exactly the order they must be applied in.
+#
+# Seeds stay explicit: they are not numbered, and categories must land before
+# the products that reference them.
 FILES=(
-  supabase/migrations/0001_initial_schema.sql
-  supabase/migrations/0002_add_product_flags.sql
-  supabase/migrations/0003_admin_role.sql
-  supabase/migrations/0004_lock_admin_flag.sql
-  supabase/migrations/0005_currency_inr.sql
-  supabase/migrations/0006_sales_schema.sql
-  supabase/migrations/0007_products_in_rupees_view.sql
-  supabase/migrations/0008_fuzzy_product_search.sql
-  supabase/migrations/0009_record_offline_sale.sql
-  supabase/migrations/0010_whatsapp_orders.sql
-  supabase/migrations/0011_place_whatsapp_order.sql
-  supabase/migrations/0012_fix_place_whatsapp_order.sql
-  supabase/migrations/0013_storage_policies.sql
-  supabase/migrations/0014_order_stock_consistency.sql
+  supabase/migrations/[0-9]*.sql
   supabase/seed_categories.sql
   supabase/seed_products_bookmarks.sql
 )

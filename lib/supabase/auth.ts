@@ -22,7 +22,16 @@ export const getUser = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims?.sub) return null;
-  return { id: data.claims.sub as string, email: data.claims.email as string | undefined };
+  return {
+    id: data.claims.sub as string,
+    email: data.claims.email as string | undefined,
+    /**
+     * Signed into the token by the auth hook in migration 0015 — absent on
+     * tokens minted before it was enabled, which is why the caller must treat
+     * `undefined` as "ask the database" rather than as "no".
+     */
+    isAdminClaim: data.claims.is_admin as boolean | undefined,
+  };
 });
 
 /**
@@ -62,6 +71,25 @@ export const requireAdmin = cache(async () => {
 
   if (!user) {
     redirect("/admin/login");
+  }
+
+  // Fast path: the token itself says so. Migration 0015 signs is_admin into
+  // the JWT, and getClaims has already verified that signature, so this is a
+  // property read rather than a ~600ms query — and it is the whole reason the
+  // studio shell can paint before any data arrives.
+  //
+  // Only `true` short-circuits. A false or missing claim falls through to the
+  // database, which costs the round trip but keeps two cases correct:
+  //   - tokens minted before the hook was enabled have no claim at all
+  //   - someone just granted admin would otherwise wait out their token's
+  //     lifetime before the studio let them in
+  //
+  // The reverse — revoking admin — is deliberately NOT instant here. It takes
+  // effect at the next token refresh, and until then it changes only what
+  // renders: RLS reads profiles directly, so every query behind these screens
+  // is already refused. See the note in 0015.
+  if (user.isAdminClaim === true) {
+    return user;
   }
 
   // Logged in but not an admin. Send them to the storefront, NOT to
