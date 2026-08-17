@@ -2,7 +2,7 @@ import { getAdminProducts } from "@/lib/data/admin";
 import { OfflineSaleForm } from "@/components/admin/offline-sale-form";
 import { Icon } from "@/components/ui/icon";
 
-export const metadata = { title: "Art Speaks | Record sale" };
+export const metadata = { title: "Art Speaks | Record offline sale" };
 
 export default async function RecordSalePage() {
   // Listed pieces only — an unpublished draft isn't something sold at a stall.
@@ -11,10 +11,11 @@ export default async function RecordSalePage() {
   return (
     <>
       <h1 className="font-headline-md text-headline-lg text-primary mb-1">
-        Record sale
+        Record offline sale
       </h1>
       <p className="text-body-md text-on-surface-variant mb-5">
-        Tap what sold. Tap again for two. Stock comes down when you save.
+        For pieces sold in person — a stall, a fair, a friend. Tap what sold.
+        Tap again for two. Stock comes down when you save.
       </p>
 
       {products.length === 0 ? (
