@@ -37,9 +37,9 @@ export default async function ShopPage({
   const [categories, view, auth] = await Promise.all([
     getCategories(),
     getCollection(collectionSlug, q),
-    supabase.auth.getUser(),
+    supabase.auth.getClaims(),
   ]);
-  const signedIn = Boolean(auth.data.user);
+  const signedIn = Boolean(auth.data?.claims?.sub);
 
   // An unknown collection slug is a 404, not a 200 serving the full catalogue.
   if (!view) notFound();
