@@ -63,3 +63,26 @@ test("checkout with an empty basket offers the shop instead of a form", async ({
   await page.goto("/checkout");
   await expect(page.getByText(/nothing in your basket/i)).toBeVisible();
 });
+
+test("a successful order does not claim anything sold out", async ({ page }) => {
+  // Regression: the live database was running a pre-0014 build of
+  // place_whatsapp_order, which returned no `lines`. The page read that as
+  // "nothing was recorded" and told every customer their whole basket had
+  // sold out — on an order that had actually been placed correctly.
+  await page.goto("/shop");
+  await page.locator('button[aria-label^="Add "][aria-label$="to cart"]').first().click();
+  await page.goto("/checkout");
+
+  await page.getByLabel("Name").fill("Playwright Test");
+  await page.getByLabel(/whatsapp number/i).fill("9000000000");
+  await page.getByLabel("Address", { exact: true }).fill("1 Test Road");
+  await page.getByLabel("City").fill("Kolkata");
+  await page.getByLabel("State").fill("West Bengal");
+  await page.getByLabel("Pincode").fill("700001");
+  await page.getByRole("button", { name: /place order/i }).click();
+
+  await expect(page.getByText(/order #\d+ received/i)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/sold out while you were ordering/i)).toHaveCount(0);
+  // The confirmation must itemise what was recorded, not show an empty list.
+  await expect(page.getByText(/₹\d/).first()).toBeVisible();
+});
