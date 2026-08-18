@@ -56,7 +56,12 @@ export default async function SalesPage() {
         built.
       </p>
 
-      {totalOrders === 0 ? (
+      {/* Gated on whether there are any months at all, NOT on totalOrders.
+          Historical rows from 0016 report order_count 0 on purpose — the money
+          is known, the number of orders behind it is not — so keying the empty
+          state on totalOrders hid ₹40,820 of real revenue behind "Nothing sold
+          yet" the moment the only data was historical. */}
+      {months.length === 0 ? (
         <div className="rounded-[2rem] border-2 border-dashed border-outline-variant bg-surface-container-low/60 p-10 text-center">
           <Icon name="monitoring" className="text-[40px] text-outline" />
           <p className="text-body-md text-on-surface-variant mt-3">
@@ -121,6 +126,17 @@ export default async function SalesPage() {
               Featured toggle in Inventory is your choice about what to show.
             </p>
             <div className="rounded-[2rem] border-2 border-candy-pink/30 bg-surface-container-lowest p-6 space-y-3">
+              {/* Empty whenever nothing has sold through the shop — the months
+                  before it existed were recorded as totals with no line items,
+                  so there is nothing to rank. An empty bordered box would read
+                  as a failed query rather than an honest gap. */}
+              {bestSellers.length === 0 && (
+                <p className="text-body-md text-on-surface-variant">
+                  Nothing to rank yet — this fills in as orders come through the
+                  shop. The months before it opened were recorded as totals
+                  only, so there is no per-piece breakdown for them.
+                </p>
+              )}
               {bestSellers.map((b) => (
                 <div key={b.key}>
                   <div className="flex justify-between gap-3 text-body-md mb-1">
