@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
 
 /**
  * A Supabase client with no session attached, for reading the public
@@ -20,8 +21,8 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
  */
 export function createPublicClient() {
   return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_URL(),
+    SUPABASE_ANON_KEY(),
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 }
