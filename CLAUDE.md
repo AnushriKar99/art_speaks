@@ -53,6 +53,23 @@ do; `requireAdmin()` and the middleware only decide what renders. See
 `docs/LEARNING-auth-and-backend.md` for the full picture — it is the best
 starting point for anyone new here.
 
+**The admin check reads a JWT claim, not the database.** `0015` installs an
+auth hook that signs `is_admin` into the token, so `requireAdmin()` verifies it
+locally instead of querying `profiles` — that query was ~600ms in front of
+every admin render. Two consequences worth knowing:
+
+- Only a `true` claim short-circuits. False or missing falls through to the
+  database, so granting admin takes effect at once and tokens minted before the
+  hook still work.
+- Revoking admin is *not* instant: it takes effect at the next token refresh
+  (~1h), and until then changes only what renders. RLS reads `profiles`
+  directly and refuses every query behind those screens. Delete the session for
+  an immediate lockout.
+
+The hook must be enabled in the Supabase dashboard (Authentication → Hooks).
+Applying the migration alone does nothing — which is deliberate, so it is safe
+to deploy ahead of the switch.
+
 **The storefront reads through a sessionless client** (`lib/supabase/public.ts`)
 so it always shows what a visitor sees. Admin reads use the session client
 (`lib/data/admin.ts`), which sees unpublished work too. Do not mix them.
@@ -67,6 +84,22 @@ leaves paid. Offline sales are written straight to `paid`.
 
 **Redirects go through `lib/safe-redirect.ts`.** A `startsWith("/")` check is
 not enough — `/\evil.com` passes it and resolves off-site.
+
+**"Sales" is two sources, not one.** `monthly_sales` (`0006`) is computed from
+orders and still means only that. `sales_history` (`0016`) holds the months the
+studio traded before this existed — hand-entered totals, no line items, no
+order count. `sales_by_month` unions them and is what the page reads. So
+Revenue includes the pre-launch figures while Orders and Pieces sold cannot,
+which is why those tiles carry hints saying so.
+
+**Changing data by raw SQL will not show up for an hour.** Storefront reads are
+`unstable_cache` with `revalidate: 3600`, invalidated by `updateTag` — which
+only runs when a Server Action makes the change. A dashboard or SQL-editor edit
+bypasses that entirely.
+
+Restarting the dev server does **not** help: the cache is on disk, and under
+Turbopack it lives in `.next/dev/cache`, not the `.next/cache` you would look
+in. Stop the server and `rm -r .next/dev/cache`.
 
 ## Layout
 

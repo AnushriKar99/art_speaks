@@ -4,7 +4,7 @@ Living backlog. The phase design lives in
 [`superpowers/specs/2026-07-31-admin-panel-design.md`](superpowers/specs/2026-07-31-admin-panel-design.md);
 this file tracks everything, including work outside those phases.
 
-Last updated 2026-07-31.
+Last updated 2026-08-18.
 
 ---
 
@@ -33,6 +33,24 @@ Last updated 2026-07-31.
   with pg_trgm typo tolerance as a fallback.
 - **Moved the project to ap-south-1 (Mumbai).** Page renders went from ~440ms to
   ~125ms; category caching took `/about` to 4ms.
+- **End-to-end tests.** 26 Playwright specs across storefront, cart, checkout
+  and admin, run against a separate Supabase project because they write real
+  orders and move real stock. `NEXT_DIST_DIR` keeps the build out of the `.next`
+  a dev server is using.
+- **Admin guard costs no round trip.** `0015` adds a Postgres auth hook that
+  signs `is_admin` into the JWT, so `requireAdmin()` reads a verified claim
+  instead of querying `profiles`. Measured: `/admin` went from 1054-1358ms —
+  for a page with no queries of its own — to double digits.
+- **Orders filter and streaming.** All / Live / Pending / Cancelled with counts,
+  in the URL so a view can be bookmarked; the list sits behind Suspense so the
+  shell paints before the data arrives.
+- **Cancel asks first, and shows it is working.** `cancelled` is terminal, so it
+  is the one action that confirms. `useTransition` covers the write and the
+  re-render it triggers, which together were ~1.2s of unchanged screen.
+- **Sales history.** `0016` adds `sales_history` for the six months the studio
+  traded before the shop existed (₹40,820), and `sales_by_month` unions it with
+  the live figures. Deliberately not written as `orders` rows: that would have
+  deducted stock for pieces long gone and invented line items nobody recorded.
 
 ## Verify (blocked on dashboard access)
 
@@ -46,8 +64,7 @@ Last updated 2026-07-31.
       ```
       This is the only thing stopping a stranger who signs up from making
       themselves an admin.
-- [ ] **Confirm `0005` applied** — `products.currency` / `orders.currency`
-      should default to `'INR'`.
+- [x] **`0005` applied** — confirmed 2026-08-18, every product reads `INR`.
 - [ ] **Auth URL configuration** — *deferred to deployment (2026-08-05).* Site
       URL and a `http://localhost:3000/**` redirect entry are needed before
       **customer signup** can be tested; admin login is unaffected because that
@@ -65,9 +82,35 @@ Last updated 2026-07-31.
 ## Next
 
 ### 1. Deploy
-Everything points at `localhost:3000` — Supabase Site URL, auth redirect URLs,
-and the Storage host in `next.config.ts`. Nobody can buy anything until this
-exists, and the auth URL configuration below is part of it.
+Nobody can buy anything until this exists. Expect **two deploys**:
+`NEXT_PUBLIC_SITE_URL` cannot be set until the domain is known, and the first
+deploy is what produces it.
+
+1. Import `AnushriKar99/art_speaks` on Vercel. Next.js is detected; defaults are
+   fine.
+2. **Set the function region to Mumbai (`bom1`).** Vercel defaults to Washington
+   DC. Supabase is in `ap-south-1`, so leaving it means every query crosses the
+   Atlantic — ~250-300ms per round trip, on top of the user's own latency. The
+   move from Canada to Mumbai was made to fix exactly this; the wrong Vercel
+   region reintroduces it at the other end.
+3. Three environment variables, for Production, Preview and Development:
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+   `NEXT_PUBLIC_SITE_URL`. The last one is not optional — it feeds
+   `metadataBase`, and without it Open Graph images resolve against
+   `http://localhost:3000`, so every link pasted into WhatsApp or Instagram
+   renders with no picture. For a studio that sells through pasted links, that
+   is the shopfront window.
+4. Redeploy so the build picks the variables up.
+5. Auth URL configuration and the email template — both below.
+6. Then the CSP, which needs the real domain to write.
+
+Smoke test in this order, ending with the one flow never tested end to end:
+homepage images (they come from Storage) → a search with a typo → cart,
+checkout, and the order landing in `/admin/orders` → `/admin/sales` →
+**customer signup and the emailed confirmation link**.
+
+Nothing to do about the auth hook or the migrations: both are project-level and
+already applied to the live project.
 
 ### 2. Content — My Journey and About Us
 Copy and layout for `components/home/about-section.tsx` and `/about`. No
@@ -93,11 +136,12 @@ and waiting.
 | Add-to-cart animation | The item should visibly fly into the basket when added, rather than only the header count changing. Purely presentational — the cart itself works. |
 | ~~Wishlist persistence~~ | **Done** — saves to the `wishlist` table, requires an account, RLS-enforced. Signed-out visitors get a sign-in prompt. |
 | ~~Storefront search~~ | **Done** — substring match across name, description, artisan note, slug and category, with pg_trgm typo tolerance as a fallback. |
-| Category images | 5 of 8 uploaded and linked. Still needed: **bag-charms, tote-bags, stickers** — these show a tinted "Coming soon" tile until then. Optimise with `MAX_EDGE=800`, upload to `product-images/categories/`, then link. |
-| Logo image | The header and footer wordmark still hotlink a Stitch URL, which will eventually stop resolving. Requested 2026-07-20, asset never supplied. |
+| Category images | 6 of 8 uploaded and linked. Still needed: **tote-bags, stickers** — these show a tinted "Coming soon" tile until then. Resize the long edge to 800px to match the rest, upload into `product-images/categories/`, then link that one row. Do **not** run `link_category_images.sql` while any are missing: it sets every null row, and the card checks whether the URL is set rather than whether it loads, so the remaining ones become broken images. |
+| ~~Logo image~~ | **Done** — real logo, no Stitch hotlinks left anywhere. |
 | ~~Custom order section image~~ | **Done** — a real studio flat-lay, served from `public/images/`. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
-| **No test suite** | Nothing is covered. Worth adding around the money paths — stock decrement, order totals — before payment ships. |
+| Sales test passes on a broken page | The test project has no `0016`, so `sales_by_month` is missing and `getSalesSummary` returns empty. The test accepts figures *or* "nothing sold yet" and cannot tell those apart from a failed query. Apply `0016` there **without** its `insert` block, and assert a known figure rather than either-or. The same blind spot means a missed migration on deploy would not error — the page would quietly claim nothing had sold. |
+| `next.config.ts` still allowlists `lh3.googleusercontent.com` | Left over from the Stitch export. Verified 2026-08-18: all 8 products use uploaded images and none reference that host, so the pattern can be dropped. |
 
 ## Not doing (for now)
 
