@@ -14,30 +14,43 @@ const ALLOWED: OrderStatus[] = [
   "cancelled",
 ];
 
+export type StatusResult = { ok: true } | { ok: false; error: string };
+
 /**
  * Moves an order along.
  *
  * Marking one `paid` is what deducts its stock — the trigger from 0010 fires on
- * this update, exactly once, guarded by stock_deducted_at. Nothing here touches
- * products directly.
+ * this update, exactly once, guarded by stock_deducted_at. Cancelling a paid
+ * order puts it back. Nothing here touches products directly.
+ *
+ * Takes arguments rather than FormData because the caller is now a client
+ * component: it needs a confirmation step before cancelling, and a pending
+ * state while the write and the re-render it triggers are in flight. Neither
+ * is expressible with a plain form post.
+ *
+ * Returns a result instead of swallowing failures. The previous version logged
+ * to the server console and returned, so a rejected write looked identical to
+ * a successful one from the studio's side — the badge simply did not move.
  */
-export async function setOrderStatus(formData: FormData): Promise<void> {
+export async function setOrderStatus(
+  id: string,
+  status: OrderStatus,
+): Promise<StatusResult> {
   await requireAdmin();
 
-  const id = String(formData.get("id") ?? "");
-  const status = String(formData.get("status") ?? "") as OrderStatus;
-
-  if (!id || !ALLOWED.includes(status)) return;
+  // Still validated here. The client is where the buttons are, not where the
+  // rules are — a crafted call could name any status at all.
+  if (!id) return { ok: false, error: "Missing order id." };
+  if (!ALLOWED.includes(status)) {
+    return { ok: false, error: `“${status}” is not a status an order can be in.` };
+  }
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("orders")
-    .update({ status })
-    .eq("id", id);
+  const { error } = await supabase.from("orders").update({ status }).eq("id", id);
 
   if (error) {
     console.error("setOrderStatus:", error.message);
-    return;
+    return { ok: false, error: "That did not save. Try again in a moment." };
   }
 
   // Confirming or reverting an order moves stock, so the cached storefront
@@ -48,4 +61,6 @@ export async function setOrderStatus(formData: FormData): Promise<void> {
   // visit anyway. Revalidating their paths was pure cost.
   updateTag(PRODUCTS_TAG);
   revalidatePath("/admin/orders");
+
+  return { ok: true };
 }
