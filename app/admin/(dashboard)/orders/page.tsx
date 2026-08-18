@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getAdminOrders, type AdminOrder } from "@/lib/data/admin";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
-import { setOrderStatus } from "./actions";
+import { OrderActions, type NextAction } from "@/components/admin/order-actions";
 
 export const metadata = { title: "Art Speaks | Orders" };
 
@@ -69,27 +69,33 @@ const STATUS_TONE: Record<AdminOrder["status"], string> = {
   cancelled: "bg-error-container text-on-error-container",
 };
 
-/** What you can sensibly do next, rather than every status at once. */
-function nextActions(status: AdminOrder["status"]) {
+/**
+ * What you can sensibly do next, rather than every status at once.
+ *
+ * Cancel carries `confirm` because cancelled is terminal — this function
+ * returns nothing from it, so there is no way back through the UI. Every other
+ * action here is reversible, which is why it is the only one that asks.
+ */
+function nextActions(status: AdminOrder["status"]): NextAction[] {
   switch (status) {
     case "pending":
       return [
-        { to: "paid", label: "Mark paid", primary: true },
-        { to: "cancelled", label: "Cancel", primary: false },
+        { to: "paid", label: "Mark paid", busyLabel: "Marking paid…", primary: true },
+        { to: "cancelled", label: "Cancel", busyLabel: "Cancelling…", primary: false, confirm: true },
       ];
     case "paid":
       // "Back to pending" is what makes the stock restore in 0014 reachable —
       // without it a mistaken "Mark paid" permanently lowers the count, and a
       // piece sitting in the studio eventually becomes unorderable.
       return [
-        { to: "shipped", label: "Mark shipped", primary: true },
-        { to: "pending", label: "Back to pending", primary: false },
-        { to: "cancelled", label: "Cancel", primary: false },
+        { to: "shipped", label: "Mark shipped", busyLabel: "Marking shipped…", primary: true },
+        { to: "pending", label: "Back to pending", busyLabel: "Reverting…", primary: false },
+        { to: "cancelled", label: "Cancel", busyLabel: "Cancelling…", primary: false, confirm: true },
       ];
     case "shipped":
       return [
-        { to: "delivered", label: "Mark delivered", primary: true },
-        { to: "paid", label: "Back to paid", primary: false },
+        { to: "delivered", label: "Mark delivered", busyLabel: "Marking delivered…", primary: true },
+        { to: "paid", label: "Back to paid", busyLabel: "Reverting…", primary: false },
       ];
     default:
       return [];
@@ -283,24 +289,12 @@ async function OrderList({ active }: { active: FilterKey }) {
                       </span>
                     )}
                   </span>
-                  <div className="flex flex-wrap gap-2">
-                    {nextActions(o.status).map((a) => (
-                      <form action={setOrderStatus} key={a.to}>
-                        <input type="hidden" name="id" value={o.id} />
-                        <input type="hidden" name="status" value={a.to} />
-                        <button
-                          type="submit"
-                          className={
-                            a.primary
-                              ? "tactile-button rounded-2xl bg-primary text-on-primary font-headline-md px-4 py-2 text-body-md"
-                              : "rounded-2xl border-2 border-outline-variant px-4 py-2 text-body-md text-on-surface-variant hover:border-error hover:text-error transition-colors"
-                          }
-                        >
-                          {a.label}
-                        </button>
-                      </form>
-                    ))}
-                  </div>
+                  <OrderActions
+                    orderId={o.id}
+                    orderNumber={o.orderNumber}
+                    actions={nextActions(o.status)}
+                    stockDeducted={o.stockDeductedAt !== null}
+                  />
                 </div>
               </article>
             );
