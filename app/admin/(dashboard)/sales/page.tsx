@@ -77,6 +77,27 @@ export default async function SalesPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* Shown alongside the figures, not instead of them. Nothing has come
+              through the shop, which is worth saying — but the pre-launch
+              totals are still real money and hiding them was the bug this
+              replaced. Two different facts, both true, both on screen. */}
+          {totalOrders === 0 && (
+            <div className="rounded-[2rem] border-2 border-dashed border-outline-variant bg-surface-container-low/60 p-5 flex flex-wrap items-center gap-3">
+              <Icon name="monitoring" className="text-[28px] text-outline shrink-0" />
+              <p className="text-body-md text-on-surface-variant flex-1 min-w-[16rem]">
+                Nothing has sold through the shop yet. The figures below are the
+                totals recorded from before it opened — from here on, sales are
+                counted from real orders.
+              </p>
+              <Link
+                href="/admin/sales/new"
+                className="text-primary font-label-caps text-label-caps uppercase tracking-wider hover:underline whitespace-nowrap"
+              >
+                Record an offline sale
+              </Link>
+            </div>
+          )}
+
           {/* With only a handful of orders the honest headline is a number, not
               a chart. These stay useful once the chart has something to say.
 
