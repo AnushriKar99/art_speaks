@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { getSalesSummary } from "@/lib/data/admin";
-import { formatPrice } from "@/lib/types";
+import { formatPrice, formatMonth } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { SalesChart } from "@/components/admin/sales-chart";
 
 export const metadata = { title: "Art Speaks | Sales" };
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  /** Says what the figure does and does not cover, where that isn't obvious. */
+  hint?: string;
+}) {
   return (
     <div className="rounded-[2rem] border-2 border-candy-pink/30 bg-surface-container-lowest p-5">
       <p className="text-label-caps font-label-caps uppercase tracking-wide text-on-surface-variant mb-1">
@@ -15,6 +24,11 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="font-headline-md text-headline-lg text-primary leading-none">
         {value}
       </p>
+      {hint && (
+        <p className="text-[13px] text-on-surface-variant mt-2 leading-snug">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }
@@ -38,31 +52,50 @@ export default async function SalesPage() {
       </h1>
       <p className="text-body-md text-on-surface-variant mb-6">
         Counts orders marked paid, shipped or delivered — not ones still
-        waiting.
+        waiting — plus the monthly totals recorded from before the shop was
+        built.
       </p>
 
       {totalOrders === 0 ? (
         <div className="rounded-[2rem] border-2 border-dashed border-outline-variant bg-surface-container-low/60 p-10 text-center">
           <Icon name="monitoring" className="text-[40px] text-outline" />
           <p className="text-body-md text-on-surface-variant mt-3">
-            Nothing sold yet. Record a sale or mark an order paid and it appears
-            here.
+            Nothing sold yet. Record an offline sale or mark an order paid and
+            it appears here.
           </p>
           <Link
             href="/admin/sales/new"
             className="inline-block mt-4 text-primary font-label-caps text-label-caps uppercase tracking-wider hover:underline"
           >
-            Record a sale
+            Record an offline sale
           </Link>
         </div>
       ) : (
         <div className="space-y-8">
           {/* With only a handful of orders the honest headline is a number, not
-              a chart. These stay useful once the chart has something to say. */}
+              a chart. These stay useful once the chart has something to say.
+
+              The hints exist because these three no longer share a scope, and
+              silently disagreeing figures are worse than explained ones.
+              Revenue includes the pre-launch totals from 0016; the other two
+              cannot, because those months were recorded as a lump sum with no
+              order count and no line items. */}
           <div className="grid sm:grid-cols-3 gap-gutter">
-            <Stat label="Revenue" value={formatPrice(totalRevenueCents)} />
-            <Stat label="Orders" value={String(totalOrders)} />
-            <Stat label="Pieces sold" value={String(totalUnits)} />
+            <Stat
+              label="Revenue"
+              value={formatPrice(totalRevenueCents)}
+              hint="All takings, including before the shop was built."
+            />
+            <Stat
+              label="Orders"
+              value={String(totalOrders)}
+              hint="Only orders the shop recorded."
+            />
+            <Stat
+              label="Pieces sold"
+              value={String(totalUnits)}
+              hint="Only orders the shop recorded."
+            />
           </div>
 
           <section>
@@ -144,7 +177,7 @@ export default async function SalesPage() {
                       className="border-t border-outline-variant/60"
                     >
                       <td className="py-2 text-body-md text-on-surface">
-                        {m.month}
+                        {formatMonth(m.month)}
                       </td>
                       {channels.map((c) => (
                         <td

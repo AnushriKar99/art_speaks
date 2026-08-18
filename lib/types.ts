@@ -36,3 +36,21 @@ export function formatPrice(priceCents: number, currency = "INR"): string {
     currency,
   }).format(priceCents / 100);
 }
+
+/**
+ * "2026-02" -> "Feb 26".
+ *
+ * Lives here rather than in the chart because the Sales page renders the same
+ * months twice — once as bars, once as a table — and they disagreed: the chart
+ * said "Feb 26" while the table printed the raw "2026-02".
+ *
+ * Parsed by hand rather than through `new Date("2026-02")`, which is treated
+ * as UTC midnight and lands in the previous month for anyone behind it.
+ */
+export function formatMonth(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-IN", {
+    month: "short",
+    year: "2-digit",
+  });
+}

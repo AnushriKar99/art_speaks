@@ -13,7 +13,7 @@ const DESTINATIONS = [
   {
     href: "/admin/sales/new",
     icon: "point_of_sale",
-    title: "Record sale",
+    title: "Record offline sale",
     blurb: "Log an in-person sale. Tap the pieces that sold — stock updates itself.",
   },
   {

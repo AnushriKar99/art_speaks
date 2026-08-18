@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatPrice } from "@/lib/types";
+import { formatPrice, formatMonth } from "@/lib/types";
 import type { MonthlySales } from "@/lib/data/admin";
 
 /**
@@ -26,14 +26,6 @@ const CHANNEL_LABEL: Record<string, string> = {
   whatsapp: "WhatsApp",
   online: "Online",
 };
-
-function monthLabel(ym: string): string {
-  const [y, m] = ym.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("en-IN", {
-    month: "short",
-    year: "2-digit",
-  });
-}
 
 export function SalesChart({
   months,
@@ -67,14 +59,19 @@ export function SalesChart({
         </div>
       )}
 
-      <div className="flex items-end gap-3 h-56 overflow-x-auto pb-1">
+      {/* items-stretch (the default), not items-end. Under items-end each
+          column shrinks to its text, so the bar container's flex-1 had no
+          space to grow into and every bar resolved to a percentage of zero —
+          labels rendered, bars did not. The columns must fill the row's height
+          for the bars to have anything to be a fraction of. */}
+      <div className="flex gap-3 h-56 overflow-x-auto pb-1">
         {months.map((m) => {
           const heightPct = (m.revenueCents / max) * 100;
           const isHover = hover === m.month;
           return (
             <div
               key={m.month}
-              className="flex flex-col items-center gap-2 min-w-14 flex-1"
+              className="flex h-full flex-col items-center justify-end gap-2 min-w-14 flex-1"
               onMouseEnter={() => setHover(m.month)}
               onMouseLeave={() => setHover(null)}
             >
@@ -115,7 +112,7 @@ export function SalesChart({
               </div>
 
               <span className="text-[12px] text-on-surface-variant whitespace-nowrap">
-                {monthLabel(m.month)}
+                {formatMonth(m.month)}
               </span>
             </div>
           );

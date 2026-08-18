@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { label: "Dashboard", href: "/admin", exact: true },
   { label: "Inventory", href: "/admin/inventory" },
-  { label: "Record sale", href: "/admin/sales/new", exact: true },
+  { label: "Offline sale", href: "/admin/sales/new", exact: true },
   { label: "Sales", href: "/admin/sales", exact: true },
   { label: "Orders", href: "/admin/orders" },
 ];
@@ -48,8 +48,8 @@ export function AdminNavDesktop() {
 
 /**
  * Fixed bottom bar below `lg`. Mirrors the storefront's bottom-tab-bar so the
- * studio side feels like the same app — and puts "Record sale" in thumb reach,
- * which is where it gets used: standing at a market stall.
+ * studio side feels like the same app — and puts the offline-sale form in
+ * thumb reach, which is where it gets used: standing at a market stall.
  */
 export function AdminNavMobile() {
   const pathname = usePathname();
