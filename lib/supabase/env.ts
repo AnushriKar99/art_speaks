@@ -1,60 +1,78 @@
 /**
  * The two Supabase values every client needs, read once and checked.
  *
+ * READ THIS BEFORE CHANGING HOW THE VALUES ARE ACCESSED
+ *
+ * The references below must stay written out in full — `process.env.NEXT_PUBLIC_
+ * SUPABASE_URL`, statically, exactly like that. The bundler finds those literal
+ * strings and substitutes the value into the browser bundle at build time.
+ * There is no `process.env` object in a browser; the inlining is the entire
+ * mechanism.
+ *
+ * An earlier version of this file read `process.env[name]` with a computed key
+ * to avoid repeating itself. A computed key cannot be matched by the bundler,
+ * so nothing was inlined, and every client-side read returned undefined. The
+ * server rendered the page correctly — where `process.env` is real — and then
+ * hydration threw, React swapped in its error boundary, and the deployed site
+ * showed "This page couldn't load" on a page whose HTML was perfectly fine.
+ *
+ * Repetition is the price of being statically analysable. Pay it.
+ *
+ * WHY THE CHECK EXISTS AT ALL
+ *
  * These used to be read inline as `process.env.NEXT_PUBLIC_SUPABASE_URL!` in
  * four files. The `!` tells TypeScript the value exists and does nothing at
- * runtime, so a missing variable reached supabase-js as `undefined` and
- * surfaced as:
+ * runtime, so a missing variable reached supabase-js as `undefined`:
  *
  *     Error: supabaseUrl is required.
  *         at <unknown> (.next/server/chunks/ssr/_1j6l_yv._.js:24:51879)
  *
- * — in a minified build chunk, naming neither the variable nor where it should
- * have come from. That cost a deploy cycle to work out.
+ * — naming neither the variable nor where it should have come from.
  *
- * WHY THIS BITES AT BUILD TIME
- *
- * `/about` and the storefront pages are statically prerendered, and they query
- * Supabase to do it. So these must be present when `next build` runs, not only
- * when a request arrives. On a host like Vercel that means the variables have
- * to exist in the project settings *before* the first build, and be enabled for
- * the environment being built — a Preview deploy with only Production ticked
- * fails exactly like an unset variable.
- *
- * NEXT_PUBLIC_ values are also inlined into the bundle at build time, so a
- * cached build keeps whatever they were when it was made.
+ * `/about` and the storefront pages are statically prerendered and query
+ * Supabase to do it, so these must be present when `next build` runs, not only
+ * when a request arrives. On a host like Vercel that means setting them before
+ * the first build, and enabling them for the environment being built: a Preview
+ * deploy with only Production ticked fails exactly like an unset variable.
  */
 
-function required(name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY"): string {
-  const value = process.env[name];
+// Static, literal, and deliberately repetitive. See above.
+const URL_VALUE = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const ANON_KEY_VALUE = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+function required(name: string, value: string | undefined): string {
   if (value) return value;
 
-  // Which NEXT_PUBLIC_ keys did make it through? That distinguishes "none of
-  // the environment arrived" from "this one is misspelt or scoped to the wrong
-  // environment", which need different fixes and otherwise look identical.
-  //
-  // Names only — never values. The anon key is public by design, but a build
-  // log is not the place to start printing credentials by habit.
-  // Non-empty only. A variable defined as "" is present in process.env but
-  // useless, and listing it as visible would point the search in exactly the
-  // wrong direction.
-  const seen = Object.keys(process.env)
-    .filter((k) => k.startsWith("NEXT_PUBLIC_") && process.env[k])
-    .sort();
+  // Only meaningful on the server, where process.env is a real object. In the
+  // browser there is nothing to enumerate, so say that rather than printing an
+  // empty list that reads as "no variables were set" — which is what sent this
+  // investigation the wrong way once already.
+  const onServer = typeof window === "undefined";
+  const seen = onServer
+    ? Object.keys(process.env)
+        .filter((k) => k.startsWith("NEXT_PUBLIC_") && process.env[k])
+        .sort()
+    : null;
 
   throw new Error(
     `${name} is not set.\n\n` +
       `Static pages query Supabase while they are being prerendered, so this ` +
       `must exist before \`next build\` runs — not just at request time.\n\n` +
-      `NEXT_PUBLIC_ variables visible to this build: ` +
-      `${seen.length ? seen.join(", ") : "(none)"}\n\n` +
-      `If that list is empty, no environment reached the build at all. If it ` +
-      `lists others but not this one, check the spelling and that it is ` +
-      `enabled for the environment being built (Production, Preview and ` +
-      `Development are separate). Rebuild without the build cache either way: ` +
-      `NEXT_PUBLIC_ values are inlined at build time.`,
+      (seen
+        ? `NEXT_PUBLIC_ variables visible to this build: ` +
+          `${seen.length ? seen.join(", ") : "(none)"}\n\n` +
+          `If that list is empty, no environment reached the build at all. If ` +
+          `it lists others but not this one, check the spelling and that it is ` +
+          `enabled for the environment being built (Production, Preview and ` +
+          `Development are separate). Rebuild without the build cache either ` +
+          `way: NEXT_PUBLIC_ values are inlined at build time.`
+        : `This is the browser, where the value should have been inlined into ` +
+          `the bundle at build time. If it is missing here but the server ` +
+          `rendered fine, the variable was absent when this bundle was built — ` +
+          `set it and rebuild without the build cache.`),
   );
 }
 
-export const SUPABASE_URL = () => required("NEXT_PUBLIC_SUPABASE_URL");
-export const SUPABASE_ANON_KEY = () => required("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+export const SUPABASE_URL = () => required("NEXT_PUBLIC_SUPABASE_URL", URL_VALUE);
+export const SUPABASE_ANON_KEY = () =>
+  required("NEXT_PUBLIC_SUPABASE_ANON_KEY", ANON_KEY_VALUE);
