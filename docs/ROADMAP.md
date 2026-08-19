@@ -94,12 +94,36 @@ below.
       Site URL `https://art-speaks.vercel.app`; redirect URLs
       `https://art-speaks.vercel.app/**` **and** `http://localhost:3000/**`
       (keep the second or local dev signup breaks).
-- [ ] **Signup email template** → the `token_hash` form. The default sends a
-      PKCE `code` that only works in the browser that signed up, so a laptop
-      signup opened on a phone reads as expired:
+- [x] **Email confirmation turned OFF** (decided 2026-08-19). Signup now signs
+      people straight in.
+
+      The reasoning, because it should be revisited rather than inherited:
+      nothing in the app reads `email_confirmed_at`, and an account gates
+      exactly one thing — the wishlist. Orders are guest checkout and never
+      linked to an account, and the studio confirms over WhatsApp, so the app
+      never emails a customer. Verification was protecting nothing while
+      costing a flow that looked broken: the default template sends a PKCE
+      `code` that only works in the browser that signed up, so signing up on a
+      laptop and opening the email on a phone reads as "expired".
+
+      **Turn it back on when accounts hold something worth protecting** — the
+      user's planned order-history section is exactly that trigger. Do it
+      alongside custom SMTP, not before: depending on email again while
+      delivery is unreliable trades one broken flow for another. Note that by
+      then there will be unverified accounts to reconcile.
+
+      The signup form reads `data.session` from the response rather than
+      assuming either behaviour, so switching it back needs no code change.
+
+      If confirmation is ever re-enabled, also switch the template to the
+      `token_hash` form so links survive being opened on another device:
       ```html
       <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/">Confirm your email</a>
       ```
+      `/auth/confirm` already handles both shapes, so this is an upgrade rather
+      than a prerequisite. Note that template editing appeared to be locked in
+      the dashboard as of 2026-08-19 — possibly gated behind custom SMTP, which
+      would make the two one job.
 - [ ] **Custom SMTP.** Supabase's built-in sender is a shared demo service,
       capped at a few messages an hour and frequently spam-filtered — their own
       docs say not to ship on it. The whole signup flow depends on that email

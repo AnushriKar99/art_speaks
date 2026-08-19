@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const fieldClasses =
@@ -15,6 +16,7 @@ export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +29,7 @@ export function SignupForm() {
 
     setLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -42,6 +44,23 @@ export function SignupForm() {
 
     if (error) {
       setError(error.message);
+      return;
+    }
+
+    // Whether a session comes back tells us how the project is configured,
+    // so this form does not have to be told.
+    //
+    // With email confirmation ON, signUp returns a user and no session — the
+    // account is not usable until the link is opened. With it OFF, the session
+    // is here and they are already signed in; showing "check your email" would
+    // send them looking for a message nobody sent.
+    //
+    // Reading it from the response rather than hardcoding either behaviour
+    // means turning confirmation back on — planned for when accounts hold
+    // order history — needs no change here.
+    if (data.session) {
+      router.refresh();
+      router.push("/");
       return;
     }
 
