@@ -12,25 +12,26 @@ export function ShopHeader({
   categories,
   account,
   query,
-  collection,
 }: {
   categories: Category[];
   /** <AccountMenu /> — a Server Component, so it arrives as a prop. */
   account?: React.ReactNode;
   /** Current `?q=`, so the box still shows what was searched for. */
   query?: string;
-  /** Current `?collection=`, so clearing a search returns here, not to All Items. */
-  collection?: string;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Clearing a search should put you back where you were browsing. Dropping
-  // someone from "Bookmarks" to "All Items" because they emptied the search box
-  // silently discards a filter they never touched.
-  const clearedHref = collection
-    ? `/shop?collection=${encodeURIComponent(collection)}`
-    : "/shop";
+  // One cross, and it clears everything — the search term and the category
+  // filter both.
+  //
+  // This used to preserve the collection, on the reasoning that dropping
+  // someone from "Bookmarks" to "All Items" discards a filter they never
+  // touched. In practice the opposite reads better: a single ✕ that resets to
+  // the full catalogue is one obvious thing, and landing on everything is never
+  // a dead end — the categories are one tap away. Two controls that each
+  // cleared a different amount was the confusing part.
+  const clearedHref = "/shop";
   // Open by default when there's an active search, so the term stays visible
   // rather than the results looking like an unexplained filter.
   const [searchOpen, setSearchOpen] = useState(Boolean(query));
@@ -92,10 +93,10 @@ export function ShopHeader({
                 autoFocus
                 placeholder="Search the shop…"
                 aria-label="Search products"
-                // Emptying the box drops the filter straight away, rather than
-                // leaving stale results on screen until you press Enter. Fires
-                // for the native ✕ in the search input as well as for deleting
-                // by hand.
+                // Emptying the box by hand drops the filter straight away,
+                // rather than leaving stale results on screen until you press
+                // Enter. The native ✕ is hidden, so this now only covers
+                // deleting the text.
                 onInput={(e) => {
                   if (query && e.currentTarget.value === "") {
                     router.push(clearedHref);
@@ -104,8 +105,10 @@ export function ShopHeader({
                 className="w-full bg-white border-2 border-candy-pink/20 rounded-full py-3 pl-5 pr-20 outline-none focus:border-primary text-body-md shadow-sm"
               />
               {query ? (
-                // Firefox draws no native clear control, and on mobile the
-                // native one is easy to miss — so provide our own.
+                // Ours, not the browser's. Firefox draws no native clear
+                // control at all, and the native one cannot clear the category
+                // filter — it only empties the field. The WebKit one is hidden
+                // in globals.css so only this appears.
                 <Link
                   href={clearedHref}
                   aria-label="Clear search"

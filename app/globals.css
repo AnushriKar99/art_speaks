@@ -290,3 +290,18 @@ body {
   background: #ffb7ce;
   border-radius: 10px;
 }
+
+/* Hide the browser's own clear button on search inputs.
+ *
+ * WebKit and Chrome draw a ✕ inside type="search" once it has a value. The
+ * shop header already provides its own, positioned to match the design and —
+ * unlike the native one — a real link that clears the collection filter too.
+ * Both showing at once put two crosses side by side that did different things.
+ *
+ * Firefox draws none at all, which is why our own has to exist rather than
+ * this being solved by deleting it. */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
