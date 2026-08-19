@@ -46,7 +46,16 @@ export function ProductCard({
             e.stopPropagation();
             void saveToggle(product.id);
           }}
-          className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
+          // Saved and unsaved were both text-candy-pink, differing only by the
+          // icon's fill — so "saved" was a pale pink heart on white, which
+          // reads as a disabled control rather than an active one. Saved now
+          // takes the deep primary on a tinted disc; unsaved stays the light
+          // outline. The two states differ in weight, not just in fill.
+          className={`absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all z-10 ${
+            wishlist.has(product.id)
+              ? "bg-primary-container text-primary"
+              : "bg-white text-candy-pink hover:text-primary"
+          }`}
           aria-label={`${wishlist.has(product.id) ? "Remove" : "Save"} ${product.name}`}
             aria-pressed={wishlist.has(product.id)}
         >
