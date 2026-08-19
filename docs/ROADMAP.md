@@ -33,6 +33,11 @@ Last updated 2026-08-18.
   with pg_trgm typo tolerance as a fallback.
 - **Moved the project to ap-south-1 (Mumbai).** Page renders went from ~440ms to
   ~125ms; category caching took `/about` to 4ms.
+- **Accounts, end to end.** Signup signs people straight in (confirmation off —
+  see the note under Deploy for why, and when to reverse it). Forgotten
+  passwords have a real recovery flow: `/forgot-password` sends the link,
+  `/auth/reset` lands it, `/reset-password` sets the new one. Verified working
+  on production 2026-08-19.
 - **End-to-end tests.** 26 Playwright specs across storefront, cart, checkout
   and admin, run against a separate Supabase project because they write real
   orders and move real stock. `NEXT_DIST_DIR` keeps the build out of the `.next`
@@ -65,17 +70,17 @@ Last updated 2026-08-18.
       This is the only thing stopping a stranger who signs up from making
       themselves an admin.
 - [x] **`0005` applied** — confirmed 2026-08-18, every product reads `INR`.
-- [ ] **Auth URL configuration** — *deferred to deployment (2026-08-05).* Site
-      URL and a `http://localhost:3000/**` redirect entry are needed before
-      **customer signup** can be tested; admin login is unaffected because that
-      user was created directly and never needed a confirmation email. Set both
-      the production domain and the localhost entry when deploying.
-- [ ] **Switch the signup email template** to the `token_hash` form. The default
-      template's PKCE `code` only works in the browser that signed up, so
-      signing up on a laptop and opening the email on a phone fails:
-      ```html
-      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/">Confirm your email</a>
-      ```
+- [x] **Auth URL configuration** — done 2026-08-19. Site URL is the Vercel
+      domain, with `https://art-speaks.vercel.app/**` and
+      `http://localhost:3000/**` both on the redirect allow-list.
+
+      Worth knowing, because it cost an afternoon: an unlisted `redirectTo` is
+      not rejected, it is silently **discarded in favour of Site URL**. A local
+      reset link arriving at the production domain looks like the app sending
+      the wrong URL, and is not.
+- [x] ~~Switch the signup email template~~ — superseded. Email confirmation is
+      off, so no signup mail is sent at all. See the note under Deploy for when
+      this comes back.
 
 ---
 
@@ -89,7 +94,7 @@ below.
 
 #### Still outstanding after deploy
 
-- [ ] **Supabase auth URLs.** Customer signup cannot complete without these.
+- [x] **Supabase auth URLs** — done 2026-08-19.
       Authentication → URL Configuration:
       Site URL `https://art-speaks.vercel.app`; redirect URLs
       `https://art-speaks.vercel.app/**` **and** `http://localhost:3000/**`
