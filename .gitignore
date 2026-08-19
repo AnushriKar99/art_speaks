@@ -50,3 +50,7 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /.next-e2e/
+
+# Database dumps — contain customer names, addresses and phone numbers.
+backups/
+.env.backup

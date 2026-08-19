@@ -139,8 +139,13 @@ below.
       DNS records, not the website — but doing it before the two SITE_URL
       settings above saves configuring them twice, and the CSP needs the final
       domain anyway.
-- [ ] **Backups.** The free plan gives very little, and `sales_history` is
-      hand-entered data that exists nowhere else. Worth an occasional export.
+- [ ] **Backups — run one.** `./supabase/backup.sh` is written; it needs
+      `brew install libpq` and a `.env.backup` holding the connection string
+      (both are documented at the top of the script). The free plan gives no
+      automated backup worth relying on, and `sales_history` is six months of
+      takings typed in from a notebook that exist nowhere else. Dumps land in
+      `backups/`, which is gitignored — they contain customer names, addresses
+      and phone numbers.
 - [ ] **robots.txt and sitemap.xml** — both 404 today.
 - [ ] **CSP** — the last of the security headers, deliberately deferred until
       the real domain exists (see the note in `next.config.ts`).
@@ -203,6 +208,15 @@ and waiting.
 | `next.config.ts` still allowlists `lh3.googleusercontent.com` | Left over from the Stitch export. Verified 2026-08-18: all 8 products use uploaded images and none reference that host, so the pattern can be dropped. |
 
 ## Not doing (for now)
+
+- Recording custom order enquiries (decided 2026-08-19). The form pre-fills a
+  WhatsApp message and cannot send it — a browser cannot send WhatsApp on
+  someone's behalf, that needs the Business Cloud API. A half-built version
+  that stored the enquiry so an unsent one was not lost was started and
+  stopped: the studio is happy that a request only counts once the person
+  presses send.
+- "What we believe" copy on /about (decided 2026-08-19). Placeholder text is
+  staying for now.
 
 - Category CRUD in the admin panel — the 8 categories cover the range and change
   once or twice a year; adding one is a single SQL statement. Note that a SQL
