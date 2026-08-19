@@ -77,13 +77,51 @@ export function CartView() {
 
   // Only lines whose product still resolves. A piece delisted since it was
   // added simply drops out rather than rendering as a blank row.
+  /**
+   * Quantities are capped at what actually exists before anything is shown.
+   *
+   * The stored basket is not trustworthy as a quantity: it is localStorage, so
+   * it survives someone else buying the last two, and it can be edited by hand.
+   * Rendering it unchecked meant a basket could claim 100 of something with
+   * three in stock and total it up accordingly — a number the order would then
+   * refuse, after the customer had filled in their address.
+   *
+   * The database refuses it regardless (place_whatsapp_order aggregates per
+   * product and raises "Only 3 left — you asked for 100"). This is about not
+   * showing a total that was never possible.
+   */
   const items = lines
-    .map((l) => ({ product: products[l.productId], quantity: l.quantity }))
-    .filter((i): i is { product: Product; quantity: number } => Boolean(i.product));
+    .map((l) => {
+      const product = products[l.productId];
+      if (!product) return null;
+      const stock = Math.max(product.stockCount, 0);
+      return {
+        product,
+        quantity: Math.min(l.quantity, stock),
+        // What the basket asked for, kept so the line can explain itself.
+        requested: l.quantity,
+        stock,
+      };
+    })
+    .filter((i): i is NonNullable<typeof i> => i !== null);
 
+  /**
+   * Bounded at both ends.
+   *
+   * The floor was here; the ceiling was not, so + went past stock indefinitely
+   * and the subtotal grew with it. The product card's stepper had the cap
+   * (`atLimit` in add-to-cart-button) but the basket page never did.
+   *
+   * A basket can also arrive already over stock without any clicking — it
+   * lives in localStorage, so it survives someone else buying the last two,
+   * and it is editable by hand. So the clamp is against the product's current
+   * stock, read fresh above, not against whatever the browser was holding.
+   */
   const changeQuantity = (id: string, delta: number) => {
     const line = lines.find((l) => l.productId === id);
-    if (line) setQuantity(id, Math.max(1, line.quantity + delta));
+    if (!line) return;
+    const stock = products[id]?.stockCount ?? 1;
+    setQuantity(id, Math.min(Math.max(1, line.quantity + delta), Math.max(stock, 1)));
   };
 
   const removeItem = (id: string) => remove(id);
@@ -122,7 +160,7 @@ export function CartView() {
   return (
     <>
       <div className="flex flex-col gap-6">
-        {items.map(({ product, quantity }) => (
+        {items.map(({ product, quantity, requested, stock }) => (
           <div
             key={product.id}
             className="bg-surface-container-lowest rounded-xl flex items-center gap-4 border border-outline-variant hover:border-primary transition-colors py-2 px-4"
@@ -142,6 +180,17 @@ export function CartView() {
               <p className="font-body-md text-primary font-bold mt-1">
                 {formatPrice(product.priceCents, product.currency)}
               </p>
+              {/* Only when the basket asked for more than exists — a stale
+                  basket, or an edited one. Saying so here is the difference
+                  between noticing now and being refused after typing an
+                  address. */}
+              {requested > quantity && (
+                <p className="text-body-md text-error mt-1">
+                  {stock === 0
+                    ? "Sold out since you added it — remove it to check out."
+                    : `Only ${stock} left, so we've reduced this from ${requested}.`}
+                </p>
+              )}
               <div className="flex items-center gap-4 mt-3">
                 <div className="flex items-center bg-secondary-container/30 rounded-full px-2 py-1 gap-4">
                   <button
@@ -155,8 +204,16 @@ export function CartView() {
                     {quantity}
                   </span>
                   <button
-                    className="w-6 h-6 flex items-center justify-center hover:text-primary transition-colors"
-                    aria-label={`Increase quantity of ${product.name}`}
+                    className="w-6 h-6 flex items-center justify-center hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-current"
+                    // Matches the product card's stepper, whose label the e2e
+                    // suite already keys on.
+                    aria-label={
+                      quantity >= stock
+                        ? `No more ${product.name} in stock`
+                        : `Increase quantity of ${product.name}`
+                    }
+                    disabled={quantity >= stock}
+                    title={quantity >= stock ? `Only ${stock} in stock` : undefined}
                     onClick={() => changeQuantity(product.id, 1)}
                   >
                     <Icon name="add" className="text-sm" />
