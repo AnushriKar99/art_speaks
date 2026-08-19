@@ -78,7 +78,9 @@ export function AddToCartButton({
             ? `Remove ${productName} from cart`
             : `One fewer ${productName}`
         }
-        className="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-surface-container-high transition-colors"
+        // Matches the + button's usable state, so the pair reads as one
+        // control rather than two differently-weighted ones.
+        className="w-8 h-8 rounded-full flex items-center justify-center text-primary bg-primary-container/50 hover:bg-primary-container transition-colors"
       >
         <Icon name={quantity === 1 ? "delete" : "remove"} className="text-[20px]" />
       </button>
@@ -101,10 +103,14 @@ export function AddToCartButton({
             : `Add another ${productName}`
         }
         title={atLimit ? `Only ${stockCount} in stock` : undefined}
+        // The two states were text-primary against text-outline — close enough
+        // in weight that "no more left" looked like an ordinary button. Now the
+        // usable state carries a tinted disc and full-strength colour, and the
+        // unusable one drops to a faint outline with no background at all.
         className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
           atLimit
-            ? "text-outline cursor-not-allowed"
-            : "text-primary hover:bg-surface-container-high"
+            ? "text-outline-variant opacity-60 cursor-not-allowed"
+            : "text-primary bg-primary-container/50 hover:bg-primary-container"
         }`}
       >
         <Icon name="add" className="text-[20px]" />

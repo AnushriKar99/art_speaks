@@ -3,8 +3,7 @@
 import { ProductImage } from "@/components/ui/product-image";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
-import { Icon } from "@/components/ui/icon";
-import { useSaveToggle } from "@/lib/wishlist/use-save-toggle";
+import { WishlistHeart } from "@/components/product/wishlist-heart";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 
 export function ProductCard({
@@ -14,7 +13,6 @@ export function ProductCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
-  const { wishlist, saveToggle } = useSaveToggle();
   return (
     <div
       className="group cursor-pointer"
@@ -41,17 +39,11 @@ export function ProductCard({
           stockCount={product.stockCount}
           className="absolute bottom-3 right-3"
         />
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            void saveToggle(product.id);
-          }}
-          className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
-          aria-label={`${wishlist.has(product.id) ? "Remove" : "Save"} ${product.name}`}
-            aria-pressed={wishlist.has(product.id)}
-        >
-          <Icon name="favorite" className="text-[20px]" filled={wishlist.has(product.id)} />
-        </button>
+        <WishlistHeart
+          productId={product.id}
+          productName={product.name}
+          position="top-3 right-3"
+        />
       </div>
       <div className="text-center">
         <h4 className="font-headline-md text-[14px] text-on-surface mb-1">

@@ -8,8 +8,8 @@ import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { ProductModal } from "@/components/product/product-modal";
-import { useSaveToggle } from "@/lib/wishlist/use-save-toggle";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import { WishlistHeart } from "@/components/product/wishlist-heart";
 
 type Variant = "bestseller" | "arrival";
 
@@ -125,7 +125,6 @@ function BestSellerCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
-  const { wishlist, saveToggle } = useSaveToggle();
   return (
     <div
       className="min-w-[260px] group cursor-pointer block"
@@ -146,17 +145,11 @@ function BestSellerCard({
           sizes="260px"
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            void saveToggle(product.id);
-          }}
-          className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
-          aria-label={`${wishlist.has(product.id) ? "Remove" : "Save"} ${product.name}`}
-            aria-pressed={wishlist.has(product.id)}
-        >
-          <Icon name="favorite" className="text-[20px]" filled={wishlist.has(product.id)} />
-        </button>
+        <WishlistHeart
+          productId={product.id}
+          productName={product.name}
+          position="top-4 right-4"
+        />
         <AddToCartButton
           productId={product.id}
           productName={product.name}
@@ -184,7 +177,6 @@ function ArrivalCard({
   product: Product;
   onOpen: (product: Product) => void;
 }) {
-  const { wishlist, saveToggle } = useSaveToggle();
   return (
     <div
       className="min-w-[220px] group cursor-pointer block"
@@ -205,17 +197,11 @@ function ArrivalCard({
           sizes="220px"
           className="object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            void saveToggle(product.id);
-          }}
-          className="absolute top-3 right-3 w-10 h-10 bg-white rounded-full flex items-center justify-center text-candy-pink shadow-sm hover:scale-110 active:scale-95 transition-all z-10"
-          aria-label={`${wishlist.has(product.id) ? "Remove" : "Save"} ${product.name}`}
-            aria-pressed={wishlist.has(product.id)}
-        >
-          <Icon name="favorite" className="text-[20px]" filled={wishlist.has(product.id)} />
-        </button>
+        <WishlistHeart
+          productId={product.id}
+          productName={product.name}
+          position="top-3 right-3"
+        />
         <AddToCartButton
           productId={product.id}
           productName={product.name}

@@ -162,11 +162,17 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
                 </p>
               )}
               {n > 0 && (
+                // Was 12px plain text with only an underline on hover, which
+                // disappeared against the tile — easy to miss standing at a
+                // stall, which is the one place this gets used. Now a bordered
+                // pill: it reads as a control before you touch it, and the
+                // target is big enough for a thumb.
                 <button
                   type="button"
                   onClick={() => bump(p.id, -1)}
-                  className="text-[12px] text-primary hover:underline mt-0.5"
+                  className="mt-1 inline-flex items-center gap-1 rounded-full border-2 border-primary/40 bg-surface-container-lowest px-2.5 py-1 text-[12px] font-bold text-primary hover:border-primary hover:bg-primary-container/40 active:scale-95 transition-all"
                 >
+                  <Icon name="remove" className="text-[14px]" />
                   Remove one
                 </button>
               )}

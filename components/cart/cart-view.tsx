@@ -194,7 +194,7 @@ export function CartView() {
               <div className="flex items-center gap-4 mt-3">
                 <div className="flex items-center bg-secondary-container/30 rounded-full px-2 py-1 gap-4">
                   <button
-                    className="w-6 h-6 flex items-center justify-center hover:text-primary transition-colors"
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-primary bg-primary-container/50 hover:bg-primary-container transition-colors"
                     aria-label={`Decrease quantity of ${product.name}`}
                     onClick={() => changeQuantity(product.id, -1)}
                   >
@@ -204,7 +204,7 @@ export function CartView() {
                     {quantity}
                   </span>
                   <button
-                    className="w-6 h-6 flex items-center justify-center hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-current"
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-primary bg-primary-container/50 hover:bg-primary-container transition-colors disabled:bg-transparent disabled:text-outline-variant disabled:opacity-60 disabled:cursor-not-allowed"
                     // Matches the product card's stepper, whose label the e2e
                     // suite already keys on.
                     aria-label={
