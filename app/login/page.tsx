@@ -57,6 +57,14 @@ export default async function LoginPage({
         <LoginForm next={destination} />
 
         <p className="text-body-md text-on-surface-variant text-center mt-6">
+          <Link
+            href="/forgot-password"
+            className="underline hover:text-primary"
+          >
+            Forgotten your password?
+          </Link>
+        </p>
+        <p className="text-body-md text-on-surface-variant text-center mt-2">
           New here?{" "}
           <Link href="/signup" className="underline hover:text-primary">
             Create an account
