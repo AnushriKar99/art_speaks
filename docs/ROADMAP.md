@@ -82,9 +82,39 @@ Last updated 2026-08-18.
 ## Next
 
 ### 1. Deploy
-Nobody can buy anything until this exists. Expect **two deploys**:
-`NEXT_PUBLIC_SITE_URL` cannot be set until the domain is known, and the first
-deploy is what produces it.
+
+**Done 2026-08-19** — live at `https://art-speaks.vercel.app`, functions in
+`bom1` via `vercel.json`, all three environment variables set. What remains is
+below.
+
+#### Still outstanding after deploy
+
+- [ ] **Supabase auth URLs.** Customer signup cannot complete without these.
+      Authentication → URL Configuration:
+      Site URL `https://art-speaks.vercel.app`; redirect URLs
+      `https://art-speaks.vercel.app/**` **and** `http://localhost:3000/**`
+      (keep the second or local dev signup breaks).
+- [ ] **Signup email template** → the `token_hash` form. The default sends a
+      PKCE `code` that only works in the browser that signed up, so a laptop
+      signup opened on a phone reads as expired:
+      ```html
+      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/">Confirm your email</a>
+      ```
+- [ ] **Custom SMTP.** Supabase's built-in sender is a shared demo service,
+      capped at a few messages an hour and frequently spam-filtered — their own
+      docs say not to ship on it. The whole signup flow depends on that email
+      arriving. Resend's free tier is far beyond this volume; verifying a sender
+      needs DNS records on a domain you own (the user has one, unattached as of
+      2026-08-19).
+- [ ] **Point the domain at the site.** Not required for email — Resend needs
+      DNS records, not the website — but doing it before the two SITE_URL
+      settings above saves configuring them twice, and the CSP needs the final
+      domain anyway.
+- [ ] **Backups.** The free plan gives very little, and `sales_history` is
+      hand-entered data that exists nowhere else. Worth an occasional export.
+- [ ] **robots.txt and sitemap.xml** — both 404 today.
+- [ ] **CSP** — the last of the security headers, deliberately deferred until
+      the real domain exists (see the note in `next.config.ts`).
 
 1. Import `AnushriKar99/art_speaks` on Vercel. Next.js is detected; defaults are
    fine.
