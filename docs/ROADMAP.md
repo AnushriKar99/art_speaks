@@ -227,4 +227,24 @@ and waiting.
   "can review own order" policy from 0001 requires it — so the review table
   stays unused and the homepage shows screenshots instead.
 - Offline refunds and returns.
+- **Reserving stock at order time** (decided 2026-08-20). Two customers can
+  both order the last unit: availability is checked against raw `stock_count`,
+  which is not touched until an order is marked paid, so both pass. The first
+  confirmation deducts it; the second hits
+  `greatest(stock_count - qty, 0)` in `decrement_stock_on_confirm`, which
+  **clamps silently** — no error, no warning, both orders marked paid, and the
+  shortage found while packing.
+
+  Accepted because pieces can be remade: refusing the second order would lose
+  a sale the studio would happily fulfil. Worth glancing at stock when
+  something is down to its last one or two, since nothing flags it.
+
+  **This stops being optional when a payment gateway lands.** The fix is to
+  subtract what other pending orders already hold when computing availability
+  (`available = stock_count - quantity in other pending, undeducted orders`) —
+  no early deduction, only a change to what counts as available to a *new*
+  order. But a gateway also makes a pending order an abandonable thing: a
+  closed tab mid-payment would hold a unit forever, so reservations would need
+  an expiry, which means this project's first scheduled job. Both together, not
+  the reservation alone.
 - Audit logging of admin changes — one admin, not yet worth it.

@@ -103,6 +103,11 @@ export function CustomOrderForm() {
               >
                 Request Custom Piece
               </button>
+              {/* A wider window than the cart's 2–3 weeks: a custom piece has
+                  to be discussed and designed before any of it can be made. */}
+              <p className="text-center text-body-md text-on-surface-variant">
+                Custom pieces take 2–4 weeks to make and ship.
+              </p>
             </form>
           )}
         </div>

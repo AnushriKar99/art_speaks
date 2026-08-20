@@ -254,6 +254,16 @@ export function CartView() {
                 Confirmed over WhatsApp
               </span>
             </div>
+            {/* Sits in the summary rather than under the button, so it is read
+                before committing rather than after. Everything here is made by
+                hand, and a buyer expecting next-day delivery will chase on
+                WhatsApp long before the piece is ready. */}
+            <div className="flex justify-between items-center font-body-md">
+              <span className="text-secondary text-xs font-label-caps uppercase tracking-wider">
+                Ready in
+              </span>
+              <span className="text-primary italic">2–3 weeks</span>
+            </div>
           </div>
           <div className="flex justify-between items-center mb-8">
             <span className="font-headline-md text-headline-md text-on-surface">
