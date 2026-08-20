@@ -59,10 +59,6 @@ test.describe("signed in", () => {
   test("recording an in-person sale deducts stock", async ({ page }) => {
     await signIn(page);
 
-    // Read a starting count off the inventory table.
-    await page.goto("/admin/inventory");
-    const before = await page.locator("tbody tr").first().innerText();
-
     await page.goto("/admin/sales/new");
     // Must be an ENABLED tile: a sold-out piece renders disabled, and clicking
     // it does nothing — which reads as "stock did not change" and fails the
@@ -72,7 +68,28 @@ test.describe("signed in", () => {
       test.skip(true, "every piece is out of stock in the test project");
     }
 
-    await tile.click();
+    // Which piece this is has to be carried through to the assertion.
+    //
+    // This used to read row 1 of the inventory table before and after, and
+    // assert it changed — but row 1 is the newest product, which is not
+    // necessarily the one sold here. Once repeated runs drained that product
+    // to zero its tile became disabled, so the sale landed on a different
+    // piece and row 1 correctly did not move. The test then failed forever,
+    // reporting a stock bug that did not exist.
+    // The tile's label is `Add ${name}` (offline-sale-form.tsx) — a sold-out
+    // one reads `${name} — none in stock` instead, and is disabled, so the
+    // selector above never picks it.
+    const label = await tile.getAttribute("aria-label");
+    const soldName = label!.replace(/^Add /, "").trim();
+
+    const rowFor = () =>
+      page.locator("tbody tr").filter({ hasText: soldName }).first();
+
+    await page.goto("/admin/inventory");
+    const before = await rowFor().innerText();
+
+    await page.goto("/admin/sales/new");
+    await page.locator(`button[aria-label="${label}"]`).click();
     await expect(page.getByText(/^1 item$/)).toBeVisible();
     await page.getByRole("button", { name: /save sale/i }).click();
     await expect(page.getByText(/sale recorded/i)).toBeVisible({ timeout: 15_000 });
@@ -80,8 +97,11 @@ test.describe("signed in", () => {
     // The trigger from 0006 fires inside the same transaction, so the count
     // must already be lower by the time the page reloads.
     await page.goto("/admin/inventory");
-    const after = await page.locator("tbody tr").first().innerText();
-    expect(after, "stock should have changed after a sale").not.toEqual(before);
+    const after = await rowFor().innerText();
+    expect(
+      after,
+      `stock for "${soldName}" should have changed after selling one`,
+    ).not.toEqual(before);
   });
 
   test("an order can be marked paid", async ({ page }) => {
