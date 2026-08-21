@@ -533,3 +533,27 @@ export async function getCollection(
   // engines penalise. The page turns this into a real 404.
   return null;
 }
+
+/**
+ * Reorders a collection for display.
+ *
+ * Deliberately in memory rather than in the query. These lists are small, and
+ * the reads behind them are cached by tag — adding a sort to the query would
+ * multiply the cache into one entry per ordering, for no gain at this size.
+ *
+ * An unrecognised key leaves the order alone, which is the same thing "no sort
+ * chosen" does, so a mangled URL degrades to the default rather than to empty.
+ *
+ * The default is newest-first (created_at DESC), which is what the control
+ * labels it. Search results are the one exception — those come back ranked by
+ * relevance. Neither is a best-seller ranking; that is its own collection.
+ */
+export function sortProducts(products: Product[], sort?: string): Product[] {
+  if (sort === "price-asc") {
+    return [...products].sort((a, b) => a.priceCents - b.priceCents);
+  }
+  if (sort === "price-desc") {
+    return [...products].sort((a, b) => b.priceCents - a.priceCents);
+  }
+  return products;
+}
