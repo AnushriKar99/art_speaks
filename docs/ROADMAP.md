@@ -191,6 +191,70 @@ the better fit than Stripe — amounts are already in paise, and Stripe's India
 support for domestic cards is awkward. `orders.payment_id` is provider-neutral
 and waiting.
 
+### 5. "Continue with Google" (scoped 2026-08-21, not started)
+
+Worth knowing up front: **most of the architecture does not change.** Everything
+downstream of "a session exists" is provider-agnostic —
+
+- `proxy.ts` reads a JWT and does not care how it was obtained
+- `requireAdmin()` reads the `is_admin` claim, unchanged
+- the `0015` auth hook fires whenever a token is minted, Google or password
+- every RLS policy uses `auth.uid()`, which is `auth.uid()` either way
+- `handle_new_user()` is a trigger on `auth.users`, so a Google signup gets its
+  `profiles` row automatically — no form code involved
+
+#### What actually has to be built
+
+1. **Google Cloud OAuth credentials.** Console → APIs & Services → Credentials
+   → OAuth client ID (Web application). The authorised redirect URI is
+   Supabase's, not ours:
+   `https://udflrtaipqzbsfhtzuue.supabase.co/auth/v1/callback`
+   Client ID and secret go into Supabase → Authentication → Providers → Google.
+2. **A button** on `/login` and `/signup` calling
+   `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } })`.
+3. **`app/auth/callback/route.ts`.** OAuth does not return a session inline the
+   way `signInWithPassword` does — Google redirects back with a `code` that has
+   to be exchanged server-side.
+
+   This is the only structural addition, and it is nearly free:
+   `lib/auth/verify-email-link.ts` already exchanges a PKCE `code`, so the
+   callback reuses it.
+
+   **Put the destination in the PATH, not `?next=`.** Password reset was built
+   the wrong way round first and silently landed people on the homepage:
+   third-party redirect endpoints append their own query parameters and ours
+   did not survive. `/auth/reset` exists because of that. Do the same here.
+
+#### The decision it forces, which is not a technical one
+
+Supabase's **"Link accounts with the same email"** setting decides what happens
+when someone signs in with Google using an address that already has a password
+account:
+
+- **On** — one merged user. Convenient, but anyone controlling that Google
+  account can then reach the password account.
+- **Off** — two separate users sharing an email. Confusing in practice: their
+  wishlist appears to vanish depending on which button they pressed.
+
+Neither is obviously right. Linking is probably fine while an account holds
+only a wishlist; revisit it when order history lands, because by then an
+account holds addresses and purchase history.
+
+Note this also weakens, slightly, the deliberate vagueness of the sign-in
+error. Password sign-in fails identically for "no account" and "wrong password"
+so nobody can probe which emails are registered; Google's flow is more
+talkative about whether an account exists.
+
+#### Is it worth doing
+
+**Moderate.** It removes password friction and the forgotten-password path for
+anyone who uses it — but signup is already frictionless since confirmation was
+turned off, and password reset now works.
+
+The real win is **email deliverability**: a Google user never needs a reset
+email, which sidesteps the Supabase SMTP problem entirely for that group. That
+argument gets weaker once custom SMTP is set up.
+
 ---
 
 ## Also outstanding
