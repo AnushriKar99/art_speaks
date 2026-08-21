@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { Icon } from "@/components/ui/icon";
 
 export const SORT_OPTIONS = [
   { value: "", label: "Newest first" },
@@ -58,19 +59,44 @@ export function SortSelect({
       >
         Sort by
       </label>
-      <select
-        id="sort"
-        name="sort"
-        defaultValue={value}
-        onChange={() => formRef.current?.requestSubmit()}
-        className="rounded-full border-2 border-candy-pink/30 bg-white py-2 pl-3 pr-8 text-body-md text-on-surface outline-none focus:border-primary shadow-sm cursor-pointer"
-      >
-        {SORT_OPTIONS.map((o) => (
-          <option key={o.value || "relevance"} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      {/* Styled to match the Categories dropdown in the header — same
+          label-caps font, same primary colour, same chevron — but still a real
+          <select>.
+
+          Rebuilding it as a button-and-panel like Categories would look
+          identical and behave worse: a select brings the native picker on
+          mobile, full keyboard support, combobox semantics for screen readers,
+          and it keeps working before JavaScript loads. A custom panel would
+          have to re-implement the first three and could not do the fourth,
+          since only JS can open it.
+
+          appearance-none drops the browser's own arrow so the chevron below can
+          sit where the design wants it; pr-6 reserves the space. */}
+      <div className="relative flex items-center">
+        <select
+          id="sort"
+          name="sort"
+          defaultValue={value}
+          onChange={() => formRef.current?.requestSubmit()}
+          // field-sizing-content makes the select as wide as its CURRENT value
+          // rather than its longest option — without it, "Newest first" leaves
+          // a gap where "Price: low to high" would reach, and the chevron
+          // floats away from the text. Unsupported browsers fall back to the
+          // longest-option width, which is merely the gap again, not a break.
+          className="appearance-none field-sizing-content bg-transparent pr-6 text-primary font-label-caps text-label-caps uppercase tracking-wider cursor-pointer outline-none focus-visible:underline hover:text-candy-pink transition-colors"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.value || "default"} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <Icon
+          name="expand_more"
+          aria-hidden
+          className="pointer-events-none absolute right-0 text-base text-primary"
+        />
+      </div>
 
       {/* Only reachable without JavaScript, where onChange never fires. Hidden
           from sighted users rather than removed, so the form is still
