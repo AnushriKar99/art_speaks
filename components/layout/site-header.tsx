@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { DesktopNav, MobileNav } from "@/components/layout/header-nav";
 import type { Category } from "@/lib/types";
 import { CartBadge } from "@/components/cart/cart-badge";
-
-const LOGO_SRC = "/brand/logo.jpg";
+import { BrandMark } from "@/components/layout/brand-mark";
 
 export function SiteHeader({
   categories,
@@ -33,18 +31,7 @@ export function SiteHeader({
             >
               <Icon name={menuOpen ? "close" : "menu"} />
             </button>
-            <Link href="/" className="flex items-center gap-2">
-              <Image
-                alt="Art Speaks logo"
-                className="w-9 h-9 rounded-full object-cover border-2 border-candy-pink"
-                src={LOGO_SRC}
-                width={36}
-                height={36}
-              />
-              <h1 className="font-display-lg text-headline-md italic text-primary tracking-tight">
-                Art Speaks
-              </h1>
-            </Link>
+            <BrandMark asHeading />
           </div>
           <DesktopNav categories={categories} />
           <div className="flex items-center gap-4">
