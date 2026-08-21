@@ -2,12 +2,20 @@ import Image from "next/image";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 
 /**
- * The studio's logo artwork. 512x512 — which sets the ceiling on how large it
- * can be shown: at 256px CSS a 2x display asks for exactly 512, so that is the
- * largest size that stays sharp. Anything wider upscales and goes soft.
+ * The studio's logo artwork, at 882x882 — a square crop of the original scan
+ * rather than the 512x512 used in the header.
+ *
+ * The size it can be shown at is capped by the source: a 2x display needs two
+ * real pixels per CSS pixel, so 882 supports 441px before it starts upscaling.
+ * The frame is 448 with a 4px border, leaving 440 of image — one pixel inside
+ * the ceiling. Going wider than this needs a larger scan, not a config change.
+ *
+ * The header keeps the smaller file deliberately — it renders at 36px, where
+ * 512 is already far more than it needs and the larger one would be bytes
+ * spent on nothing.
  */
-const ABOUT_IMAGE = "/brand/logo.jpg";
-const ABOUT_IMAGE_PX = 256;
+const ABOUT_IMAGE = "/brand/logo-large.jpg";
+const ABOUT_IMAGE_PX = 448;
 
 export function AboutSection() {
   return (
@@ -53,8 +61,8 @@ export function AboutSection() {
         </p>
       </div>
       <div className="order-1 md:order-2 flex justify-center">
-        <div className="relative w-full max-w-64">
-          <div className="aspect-square rounded-2xl overflow-hidden shadow-2xl border-[8px] border-white ring-4 ring-candy-pink/10 relative">
+        <div className="relative w-full max-w-md">
+          <div className="aspect-square rounded-2xl overflow-hidden shadow-2xl border-4 border-white ring-2 ring-candy-pink/20 relative">
             <Image
               src={ABOUT_IMAGE}
               alt="The Art Speaks logo — an illustrated portrait in yellow and grey"
@@ -64,7 +72,7 @@ export function AboutSection() {
               className="object-cover"
             />
           </div>
-          <div className="absolute -bottom-5 right-0 sm:-bottom-6 sm:-right-5 w-24 h-24 bg-candy-pink rounded-full flex items-center justify-center p-3 text-center text-on-primary-container text-[10px] leading-tight font-black uppercase rotate-12 shadow-xl border-4 border-white animate-bounce">
+          <div className="absolute -bottom-6 right-0 sm:-bottom-8 sm:-right-6 w-28 h-28 sm:w-32 sm:h-32 bg-candy-pink rounded-full flex items-center justify-center p-4 text-center text-on-primary-container text-[11px] leading-tight font-black uppercase rotate-12 shadow-xl border-4 border-white animate-bounce">
             Handmade with soul
           </div>
         </div>
