@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { DesktopNav, MobileNav } from "@/components/layout/header-nav";
 import type { Category } from "@/lib/types";
 import { CartBadge } from "@/components/cart/cart-badge";
+import { BrandMark } from "@/components/layout/brand-mark";
 
 export function ShopHeader({
   categories,
@@ -50,12 +51,7 @@ export function ShopHeader({
           >
             <Icon name={menuOpen ? "close" : "menu"} />
           </button>
-          <Link
-            className="font-headline-md text-headline-md font-bold text-primary tracking-tight"
-            href="/"
-          >
-            Art Speaks
-          </Link>
+          <BrandMark />
           <DesktopNav categories={categories} />
           <div className="flex gap-4 items-center">
             <button

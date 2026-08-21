@@ -24,7 +24,14 @@ test("the shop lists products with rupee prices", async ({ page }) => {
   // Prices must render through formatPrice — a raw paise integer on screen
   // would mean the currency formatting broke.
   await expect(page.getByText(/₹\d/).first()).toBeVisible();
-  await expect(page.getByText(/\b\d{4,}\b(?!\s*left)/)).toHaveCount(0);
+
+  // Scoped to <main>, not the whole page. This scanned everything until the
+  // footer arrived on this page and its "© 2024 Art Speaks" tripped a check
+  // meant to catch unformatted prices. A year is not a price, and neither is a
+  // phone number — the assertion belongs where prices actually render.
+  await expect(
+    page.locator("main").getByText(/\b\d{4,}\b(?!\s*left)/),
+  ).toHaveCount(0);
 });
 
 test("search finds a product by partial name", async ({ page }) => {

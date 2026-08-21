@@ -3,6 +3,7 @@ import { ShopHeader } from "@/components/layout/shop-header";
 import { AccountMenu } from "@/components/layout/account-menu";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { getCategories } from "@/lib/data/products";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 export const metadata: Metadata = {
   title: "Art Speaks | Place your order",
@@ -27,6 +28,7 @@ export default async function CheckoutPage() {
           <CheckoutForm />
         </div>
       </main>
+      <SiteFooter />
     </>
   );
 }

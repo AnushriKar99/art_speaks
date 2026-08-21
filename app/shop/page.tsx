@@ -4,12 +4,18 @@ import { AccountMenu } from "@/components/layout/account-menu";
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ProductGrid } from "@/components/product/product-grid";
 import { Icon } from "@/components/ui/icon";
-import { getCategories, getCollection } from "@/lib/data/products";
+import { getCategories, getCollection, sortProducts } from "@/lib/data/products";
 import { EmptyCollection } from "@/components/product/empty-collection";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SortSelect, type SortKey } from "@/components/product/sort-select";
 
-type ShopSearchParams = Promise<{ collection?: string; q?: string }>;
+type ShopSearchParams = Promise<{
+  collection?: string;
+  q?: string;
+  sort?: string;
+}>;
 
 export async function generateMetadata({
   searchParams,
@@ -31,7 +37,7 @@ export default async function ShopPage({
 }: {
   searchParams: ShopSearchParams;
 }) {
-  const { collection: collectionSlug, q } = await searchParams;
+  const { collection: collectionSlug, q, sort } = await searchParams;
 
   const supabase = await createClient();
   const [categories, view, auth] = await Promise.all([
@@ -43,7 +49,13 @@ export default async function ShopPage({
 
   // An unknown collection slug is a 404, not a 200 serving the full catalogue.
   if (!view) notFound();
-  const { title: heading, eyebrow, products } = view;
+  const { title: heading, eyebrow, products: unsorted } = view;
+  const products = sortProducts(unsorted, sort);
+
+  // Not on the wishlist: it is a personal list someone curated, and reordering
+  // it by price is not a question anyone asks of their own saved things. Also
+  // hidden when there is nothing to sort.
+  const showSort = collectionSlug !== "wishlist" && products.length > 1;
 
   return (
     <>
@@ -70,13 +82,22 @@ export default async function ShopPage({
         </div>
 
         <section className="max-w-container-max mx-auto px-margin-mobile pt-12 relative z-10">
-          <div className="mb-8">
-            <span className="text-label-lg font-label-caps text-primary uppercase tracking-[0.1em]">
-              {eyebrow}
-            </span>
-            <h2 className="text-headline-lg font-headline-md text-on-surface mt-1">
-              {heading}
-            </h2>
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <span className="text-label-lg font-label-caps text-primary uppercase tracking-[0.1em]">
+                {eyebrow}
+              </span>
+              <h2 className="text-headline-lg font-headline-md text-on-surface mt-1">
+                {heading}
+              </h2>
+            </div>
+            {showSort ? (
+              <SortSelect
+                value={(sort ?? "") as SortKey}
+                collection={collectionSlug}
+                query={q}
+              />
+            ) : null}
           </div>
 
           {products.length > 0 ? (
@@ -90,6 +111,7 @@ export default async function ShopPage({
           )}
         </section>
       </main>
+      <SiteFooter />
       <BottomTabBar />
     </>
   );

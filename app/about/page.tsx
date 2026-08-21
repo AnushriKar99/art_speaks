@@ -7,6 +7,7 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { Icon } from "@/components/ui/icon";
 import { getCategories } from "@/lib/data/products";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 export const metadata: Metadata = {
   title: "Art Speaks | About Us",
@@ -186,6 +187,7 @@ export default async function AboutPage() {
           </div>
         </section>
       </main>
+      <SiteFooter />
       <BottomTabBar />
     </>
   );
