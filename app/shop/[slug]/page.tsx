@@ -14,6 +14,7 @@ import {
   getRelatedProducts,
 } from "@/lib/data/products";
 import { formatPrice } from "@/lib/types";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 type Params = Promise<{ slug: string }>;
 
@@ -151,6 +152,7 @@ export default async function ProductPage({ params }: { params: Params }) {
           </p>
         </div>
       </main>
+      <SiteFooter />
       <BottomTabBar />
     </>
   );

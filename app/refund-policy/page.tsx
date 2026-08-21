@@ -5,6 +5,7 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { Icon } from "@/components/ui/icon";
 import { getCategories } from "@/lib/data/products";
 import { EMAIL_ADDRESS, buildWhatsAppLink } from "@/lib/contact";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 export const metadata: Metadata = {
   title: "Art Speaks | Refund Policy",
@@ -148,6 +149,7 @@ export default async function RefundPolicyPage() {
           </div>
         </section>
       </main>
+      <SiteFooter />
       <BottomTabBar />
     </>
   );
