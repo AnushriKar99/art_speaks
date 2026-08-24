@@ -64,3 +64,35 @@ export async function setOrderStatus(
 
   return { ok: true };
 }
+
+/**
+ * Marks a single line item prepared or not — studio bookkeeping (0018), not
+ * part of the order's own status. A multi-item order can have some pieces
+ * ready and others still in progress, which is exactly why this lives on the
+ * line rather than the order.
+ *
+ * No cache to touch: this never changes what a customer or the storefront can
+ * see, only what the studio's own view of an order shows.
+ */
+export async function setItemPrepared(
+  itemId: string,
+  prepared: boolean,
+): Promise<StatusResult> {
+  await requireAdmin();
+
+  if (!itemId) return { ok: false, error: "Missing item id." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("order_items")
+    .update({ prepared })
+    .eq("id", itemId);
+
+  if (error) {
+    console.error("setItemPrepared:", error.message);
+    return { ok: false, error: "That did not save. Try again in a moment." };
+  }
+
+  revalidatePath("/admin/orders");
+  return { ok: true };
+}

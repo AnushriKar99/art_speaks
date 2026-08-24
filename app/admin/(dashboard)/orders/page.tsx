@@ -4,6 +4,7 @@ import { getAdminOrders, type AdminOrder } from "@/lib/data/admin";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { OrderActions, type NextAction } from "@/components/admin/order-actions";
+import { PreparedToggle } from "@/components/admin/prepared-toggle";
 
 export const metadata = { title: "Art Speaks | Orders" };
 
@@ -261,9 +262,12 @@ async function OrderList({ active }: { active: FilterKey }) {
                     return (
                       <li
                         key={l.id}
-                        className="flex justify-between gap-3 text-body-md"
+                        className="flex items-center gap-3 text-body-md"
                       >
-                        <span className="text-on-surface">
+                        {/* Studio bookkeeping, not a customer-facing part of
+                            the order — see PreparedToggle. */}
+                        <PreparedToggle itemId={l.id} prepared={l.prepared} />
+                        <span className="flex-1 text-on-surface">
                           {l.quantity} × {l.productName}
                           {short && (
                             <span className="text-error">
