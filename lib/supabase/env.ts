@@ -73,6 +73,59 @@ function required(name: string, value: string | undefined): string {
   );
 }
 
-export const SUPABASE_URL = () => required("NEXT_PUBLIC_SUPABASE_URL", URL_VALUE);
+/**
+ * A present-but-wrong URL is worse than a missing one.
+ *
+ * Missing throws immediately and says so. Wrong sails through every check here
+ * and through supabase-js — which only refuses an EMPTY url — and then fails at
+ * runtime as a 404 against whatever host was given, with no error in the
+ * console and no clue what happened.
+ *
+ * That is not hypothetical. NEXT_PUBLIC_SUPABASE_URL was once set to the site's
+ * own domain, presumably pasted into the wrong field alongside
+ * NEXT_PUBLIC_SITE_URL. Every request then went to
+ * `https://www.artspeaks.shop/auth/v1/token` — a 404 — so login silently failed
+ * and the storefront rendered "No pieces in this category yet", because the
+ * data-layer catch turns a failed query into an empty list.
+ *
+ * Checking the shape at build time turns a silent, hours-long runtime
+ * investigation into a build log that names the value.
+ */
+function assertSupabaseHost(value: string): string {
+  let host: string;
+  try {
+    host = new global.URL(value).host;
+  } catch {
+    throw new Error(
+      `NEXT_PUBLIC_SUPABASE_URL is not a valid URL.\n\n` +
+        `  got: ${JSON.stringify(value)}\n\n` +
+        `Expected the Supabase project URL, e.g. https://xxxx.supabase.co`,
+    );
+  }
+
+  // Self-hosted Supabase would not match, hence the escape hatch rather than a
+  // hard rule. Nothing here is self-hosted today.
+  if (!host.endsWith(".supabase.co") && !process.env.SUPABASE_ALLOW_ANY_HOST) {
+    throw new Error(
+      `NEXT_PUBLIC_SUPABASE_URL does not look like a Supabase project.\n\n` +
+        `  got:      ${value}\n` +
+        `  expected: https://<project-ref>.supabase.co\n\n` +
+        `This is almost always NEXT_PUBLIC_SITE_URL pasted into the wrong ` +
+        `field. They are both URLs and both name the site, so it is an easy ` +
+        `swap — and it fails silently: supabase-js accepts any non-empty ` +
+        `string, so requests just 404 against the wrong host and the ` +
+        `storefront renders as empty.\n\n` +
+        `Set NEXT_PUBLIC_SUPABASE_URL to the project URL from Supabase → ` +
+        `Project Settings → API, then rebuild WITHOUT the build cache — ` +
+        `NEXT_PUBLIC_ values are inlined at build time, so a cached build ` +
+        `keeps the old one.\n\n` +
+        `(Set SUPABASE_ALLOW_ANY_HOST=1 if this is genuinely self-hosted.)`,
+    );
+  }
+  return value;
+}
+
+export const SUPABASE_URL = () =>
+  assertSupabaseHost(required("NEXT_PUBLIC_SUPABASE_URL", URL_VALUE));
 export const SUPABASE_ANON_KEY = () =>
   required("NEXT_PUBLIC_SUPABASE_ANON_KEY", ANON_KEY_VALUE);
