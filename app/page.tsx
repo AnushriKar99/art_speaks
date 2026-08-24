@@ -54,7 +54,7 @@ export default async function Home() {
         </section>
 
         <CategoryScroller categories={categories} />
-        <CustomOrderForm />
+        <CustomOrderForm categories={categories} />
         <AboutSection />
         <ReviewsCarousel />
       </main>
