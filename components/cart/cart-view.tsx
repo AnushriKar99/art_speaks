@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { useCart } from "@/lib/cart/cart-store";
 import { createClient } from "@/lib/supabase/client";
-import { formatPrice, type Product } from "@/lib/types";
+import { formatPrice, SHIPPING_CENTS, type Product } from "@/lib/types";
 
 type Row = {
   id: string;
@@ -130,6 +130,7 @@ export function CartView() {
     (sum, item) => sum + item.product.priceCents * item.quantity,
     0,
   );
+  const totalCents = subtotalCents + SHIPPING_CENTS;
 
   if (!loaded && count > 0) {
     return (
@@ -250,8 +251,8 @@ export function CartView() {
               <span className="text-secondary text-xs font-label-caps uppercase tracking-wider">
                 Shipping
               </span>
-              <span className="text-primary italic">
-                Confirmed over WhatsApp
+              <span className="font-bold text-on-surface">
+                {formatPrice(SHIPPING_CENTS)}
               </span>
             </div>
             {/* Sits in the summary rather than under the button, so it is read
@@ -270,7 +271,7 @@ export function CartView() {
               Total
             </span>
             <span className="font-display-lg text-headline-md text-primary">
-              {formatPrice(subtotalCents)}
+              {formatPrice(totalCents)}
             </span>
           </div>
           <Link

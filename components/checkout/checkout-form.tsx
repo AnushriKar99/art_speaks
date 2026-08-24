@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart/cart-store";
 import { createClient } from "@/lib/supabase/client";
 import { buildWhatsAppLink } from "@/lib/contact";
-import { formatPrice } from "@/lib/types";
+import { formatPrice, SHIPPING_CENTS } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 
 const field =
@@ -18,6 +18,8 @@ type Line = { id: string; name: string; priceCents: number; quantity: number };
 type PlacedLine = { name: string; quantity: number; unit_price_cents: number };
 type Placed = {
   orderNumber: number;
+  subtotalCents: number;
+  shippingCents: number;
   totalCents: number;
   lines: PlacedLine[];
   /** Lines the browser showed that the order did not include. */
@@ -72,7 +74,8 @@ export function CheckoutForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids]);
 
-  const totalCents = items.reduce((n, i) => n + i.priceCents * i.quantity, 0);
+  const subtotalCents = items.reduce((n, i) => n + i.priceCents * i.quantity, 0);
+  const totalCents = subtotalCents + SHIPPING_CENTS;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -113,6 +116,8 @@ export function CheckoutForm() {
     const row = (
       data as {
         order_number: number;
+        subtotal_cents: number;
+        shipping_cents: number;
         total_cents: number;
         lines: PlacedLine[] | null;
       }[]
@@ -157,6 +162,8 @@ export function CheckoutForm() {
       "",
       ...placedLines.map((l) => `• ${l.quantity} × ${l.name}`),
       "",
+      `Subtotal: ${formatPrice(row.subtotal_cents)}`,
+      `Shipping: ${formatPrice(row.shipping_cents)}`,
       `Total: ${formatPrice(row.total_cents)}`,
       `Name: ${name}`,
     ].join("\n");
@@ -166,6 +173,8 @@ export function CheckoutForm() {
     clear();
     setPlaced({
       orderNumber: row.order_number,
+      subtotalCents: row.subtotal_cents,
+      shippingCents: row.shipping_cents,
       totalCents: row.total_cents,
       lines: placedLines,
       dropped,
@@ -198,7 +207,13 @@ export function CheckoutForm() {
               </span>
             </li>
           ))}
-          <li className="flex justify-between gap-3 pt-1 font-headline-md text-primary">
+          <li className="flex justify-between gap-3 pt-1">
+            <span className="text-on-surface-variant">Shipping</span>
+            <span className="text-on-surface-variant">
+              {formatPrice(placed.shippingCents)}
+            </span>
+          </li>
+          <li className="flex justify-between gap-3 font-headline-md text-primary">
             <span>Total</span>
             <span>{formatPrice(placed.totalCents)}</span>
           </li>
@@ -352,11 +367,21 @@ export function CheckoutForm() {
             </li>
           ))}
         </ul>
-        <div className="flex justify-between items-center border-t border-primary/10 pt-4 mb-6">
-          <span className="font-headline-md text-body-lg text-on-surface">Total</span>
-          <span className="font-headline-md text-headline-md text-primary">
-            {formatPrice(totalCents)}
-          </span>
+        <div className="border-t border-primary/10 pt-4 mb-6 space-y-2">
+          <div className="flex justify-between items-center text-body-md">
+            <span className="text-on-surface-variant">Subtotal</span>
+            <span className="text-on-surface-variant">{formatPrice(subtotalCents)}</span>
+          </div>
+          <div className="flex justify-between items-center text-body-md">
+            <span className="text-on-surface-variant">Shipping</span>
+            <span className="text-on-surface-variant">{formatPrice(SHIPPING_CENTS)}</span>
+          </div>
+          <div className="flex justify-between items-center pt-1">
+            <span className="font-headline-md text-body-lg text-on-surface">Total</span>
+            <span className="font-headline-md text-headline-md text-primary">
+              {formatPrice(totalCents)}
+            </span>
+          </div>
         </div>
 
         {error && (

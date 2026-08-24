@@ -1,3 +1,16 @@
+/**
+ * Flat shipping fee shown before checkout, in paise. ₹80.
+ *
+ * Display only. The real charge is computed inside place_whatsapp_order
+ * (migration 0017), which has its own copy of this same figure — the cart
+ * page cannot deduct stock or write an order, so it has nothing to enforce
+ * this value against and must not be trusted to. If the fee ever changes,
+ * both this constant and the one in that migration have to move together, or
+ * the cart's preview total will disagree with what the order actually
+ * charges.
+ */
+export const SHIPPING_CENTS = 8000;
+
 export interface Category {
   id: string;
   name: string;
