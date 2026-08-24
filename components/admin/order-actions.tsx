@@ -13,6 +13,10 @@ export type NextAction = {
   primary: boolean;
   /** Terminal and destructive — ask first. */
   confirm?: boolean;
+  /** Blocked by a precondition the page has already checked — not in flight. */
+  disabled?: boolean;
+  /** Shown beneath the buttons while `disabled` is true. */
+  disabledReason?: string;
 };
 
 export function OrderActions({
@@ -47,6 +51,7 @@ export function OrderActions({
   }
 
   const busy = isPending || running !== null;
+  const blocked = actions.find((a) => a.disabled && a.disabledReason);
 
   return (
     <div className="flex flex-col items-end gap-2">
@@ -59,9 +64,12 @@ export function OrderActions({
               type="button"
               // Every button locks, not just the one clicked: a second status
               // change queued behind the first would race the re-render and
-              // could land on a status the order has already left.
-              disabled={busy}
+              // could land on a status the order has already left. `a.disabled`
+              // is a separate, precondition-based lock — set by the page, not
+              // by this component's own in-flight state.
+              disabled={busy || a.disabled}
               aria-busy={isRunning}
+              title={a.disabled ? a.disabledReason : undefined}
               onClick={() => (a.confirm ? setAsking(a) : run(a))}
               className={`${
                 a.primary
@@ -85,6 +93,12 @@ export function OrderActions({
       {error && (
         <p role="alert" className="text-body-md text-error text-right max-w-xs">
           {error}
+        </p>
+      )}
+
+      {!error && blocked && (
+        <p className="text-body-md text-on-surface-variant text-right max-w-xs">
+          {blocked.disabledReason}
         </p>
       )}
 

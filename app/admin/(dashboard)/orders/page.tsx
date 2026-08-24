@@ -4,6 +4,7 @@ import { getAdminOrders, type AdminOrder } from "@/lib/data/admin";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { OrderActions, type NextAction } from "@/components/admin/order-actions";
+import { PreparedToggle } from "@/components/admin/prepared-toggle";
 
 export const metadata = { title: "Art Speaks | Orders" };
 
@@ -75,8 +76,14 @@ const STATUS_TONE: Record<AdminOrder["status"], string> = {
  * Cancel carries `confirm` because cancelled is terminal — this function
  * returns nothing from it, so there is no way back through the UI. Every other
  * action here is reversible, which is why it is the only one that asks.
+ *
+ * `allPrepared` gates "Mark shipped": shipping something the studio has not
+ * actually finished making is the one sequencing mistake this page can still
+ * make by itself, since nothing else in the order flow depends on the
+ * prepared ticks. Disabled rather than hidden, so the next step is still
+ * visible — just not clickable yet.
  */
-function nextActions(status: AdminOrder["status"]): NextAction[] {
+function nextActions(status: AdminOrder["status"], allPrepared: boolean): NextAction[] {
   switch (status) {
     case "pending":
       return [
@@ -88,7 +95,14 @@ function nextActions(status: AdminOrder["status"]): NextAction[] {
       // without it a mistaken "Mark paid" permanently lowers the count, and a
       // piece sitting in the studio eventually becomes unorderable.
       return [
-        { to: "shipped", label: "Mark shipped", busyLabel: "Marking shipped…", primary: true },
+        {
+          to: "shipped",
+          label: "Mark shipped",
+          busyLabel: "Marking shipped…",
+          primary: true,
+          disabled: !allPrepared,
+          disabledReason: "Tick every piece prepared before shipping.",
+        },
         { to: "pending", label: "Back to pending", busyLabel: "Reverting…", primary: false },
         { to: "cancelled", label: "Cancel", busyLabel: "Cancelling…", primary: false, confirm: true },
       ];
@@ -201,6 +215,7 @@ async function OrderList({ active }: { active: FilterKey }) {
         <div className="space-y-4">
           {shown.map((o) => {
             const address = formatAddress(o.address);
+            const allPrepared = o.lines.every((l) => l.prepared);
             return (
               <article
                 key={o.id}
@@ -261,9 +276,22 @@ async function OrderList({ active }: { active: FilterKey }) {
                     return (
                       <li
                         key={l.id}
-                        className="flex justify-between gap-3 text-body-md"
+                        className="flex items-center gap-3 text-body-md"
                       >
-                        <span className="text-on-surface">
+                        {/* Studio bookkeeping, not a customer-facing part of
+                            the order — see PreparedToggle. Shown only once an
+                            order is paid: preparing something nobody has
+                            confirmed buying is premature, and ticking boxes on
+                            a cancelled order is just confusing. A fixed-size
+                            spacer stands in for the other statuses so the
+                            product name still lines up down the list rather
+                            than shifting left whenever the toggle disappears. */}
+                        {o.status === "paid" ? (
+                          <PreparedToggle itemId={l.id} prepared={l.prepared} />
+                        ) : (
+                          <span className="w-6 h-6 shrink-0" aria-hidden />
+                        )}
+                        <span className="flex-1 text-on-surface">
                           {l.quantity} × {l.productName}
                           {short && (
                             <span className="text-error">
@@ -292,7 +320,7 @@ async function OrderList({ active }: { active: FilterKey }) {
                   <OrderActions
                     orderId={o.id}
                     orderNumber={o.orderNumber}
-                    actions={nextActions(o.status)}
+                    actions={nextActions(o.status, allPrepared)}
                     stockDeducted={o.stockDeductedAt !== null}
                   />
                 </div>

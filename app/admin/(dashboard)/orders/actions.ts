@@ -64,3 +64,67 @@ export async function setOrderStatus(
 
   return { ok: true };
 }
+
+/**
+ * Marks a single line item prepared or not — studio bookkeeping (0018), not
+ * part of the order's own status. A multi-item order can have some pieces
+ * ready and others still in progress, which is exactly why this lives on the
+ * line rather than the order.
+ *
+ * No cache to touch: this never changes what a customer or the storefront can
+ * see, only what the studio's own view of an order shows.
+ */
+export async function setItemPrepared(
+  itemId: string,
+  prepared: boolean,
+): Promise<StatusResult> {
+  await requireAdmin();
+
+  if (!itemId) return { ok: false, error: "Missing item id." };
+
+  const supabase = await createClient();
+
+  // The client already hides this control outside 'paid' — restated here
+  // because the client is where the button is, not where the rule is. A
+  // crafted call could still name any item id.
+  //
+  // Two queries, deliberately, not `.eq("orders.status", "paid")` chained onto
+  // the update. That reads as though it filters the row set the same way it
+  // does on a SELECT — it is the exact pattern lib/data/products.ts uses for
+  // "only if the joined row matches" — but PostgREST does not enforce a
+  // join-column filter on a mutation. Tested directly against a real pending
+  // order: the filtered call still updated it, and only the SELECT-shaped
+  // embed in the response came back null. It fails silently, which is worse
+  // than not having the check at all, since the code reads as protected.
+  const { data: item, error: lookupError } = await supabase
+    .from("order_items")
+    .select("orders(status)")
+    .eq("id", itemId)
+    .single();
+
+  if (lookupError || !item) {
+    return { ok: false, error: "That item could not be found." };
+  }
+
+  const orderStatus = (item as unknown as { orders: { status: string } | null })
+    .orders?.status;
+  if (orderStatus !== "paid") {
+    return {
+      ok: false,
+      error: "This can only be marked prepared once the order is paid.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("order_items")
+    .update({ prepared })
+    .eq("id", itemId);
+
+  if (error) {
+    console.error("setItemPrepared:", error.message);
+    return { ok: false, error: "That did not save. Try again in a moment." };
+  }
+
+  revalidatePath("/admin/orders");
+  return { ok: true };
+}

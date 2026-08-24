@@ -103,6 +103,8 @@ export interface AdminOrderLine {
   quantity: number;
   /** Current stock of that product, so overselling is visible before confirming. */
   stockCount: number | null;
+  /** Studio bookkeeping only (0018) — has this piece been made and set aside. */
+  prepared: boolean;
 }
 
 export interface AdminOrder {
@@ -139,6 +141,7 @@ type OrderRow = {
     product_name: string;
     unit_price_cents: number;
     quantity: number;
+    prepared: boolean;
     products: { stock_count: number } | null;
   }[];
 };
@@ -152,7 +155,7 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, total_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, products(stock_count))",
+      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, total_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, prepared, products(stock_count))",
     )
     .order("created_at", { ascending: false });
 
@@ -179,6 +182,7 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
       unitPriceCents: l.unit_price_cents,
       quantity: l.quantity,
       stockCount: l.products?.stock_count ?? null,
+      prepared: l.prepared,
     })),
   }));
 }
