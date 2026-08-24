@@ -4,12 +4,13 @@ import { useState } from "react";
 import Image from "next/image";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { buildWhatsAppLink } from "@/lib/contact";
+import type { Category } from "@/lib/types";
 
 /** The studio desk. Served from the repo rather than Storage — it is site
  *  chrome, not product data, so it belongs with the code that renders it. */
 const FORM_IMAGE = "/images/custom-order.jpg";
 
-export function CustomOrderForm() {
+export function CustomOrderForm({ categories }: { categories: Category[] }) {
   const [submitted, setSubmitted] = useState(false);
 
   return (
@@ -73,16 +74,26 @@ export function CustomOrderForm() {
                 <label className="block text-label-caps font-bold text-primary mb-2 uppercase text-[10px] tracking-widest">
                   Pick a Category
                 </label>
+                {/* Real categories from the DB, not a hand-typed list that
+                    drifts from what the shop actually sells. It had "Worry
+                    Stones" where the real category is "Keychains/Worry
+                    Stones", and no entry at all for Paintings, Bag Charms,
+                    Fridge Magnets, Tote Bags or Stickers — five of eight
+                    categories were simply not choosable.
+
+                    "Something else" stays as a fixed option after the real
+                    ones: a custom piece is by definition allowed not to fit
+                    an existing shelf, which is a different case from the list
+                    having gone stale. */}
                 <select
                   name="category"
                   className="w-full bg-white border-2 border-candy-pink/20 rounded-2xl py-3 px-4 focus:ring-primary focus:border-primary outline-none text-body-md shadow-sm"
-                  defaultValue="Phone Charms"
+                  defaultValue={categories[0]?.name}
                 >
-                  <option>Phone Charms</option>
-                  <option>Worry Stones</option>
-                  <option>Bookmarks</option>
-                  <option>Trinkets</option>
-                  <option>Others</option>
+                  {categories.map((c) => (
+                    <option key={c.id}>{c.name}</option>
+                  ))}
+                  <option>Something else</option>
                 </select>
               </div>
               <div>
