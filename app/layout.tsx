@@ -48,14 +48,21 @@ export const metadata: Metadata = {
     title: "Art Speaks | Handcrafted Artistic Curations",
     description:
       "Small items, big feelings — phone charms, worry stones, bookmarks and custom pieces, handmade in a tiny studio.",
-    images: [{ url: "/images/journey.png", width: 896, height: 1195 }],
+    // 1200x630 is the shape every platform crops toward — WhatsApp,
+    // Instagram, Twitter, iMessage. This is the logo centred on the site's own
+    // background rather than a photo, so nothing important is lost whichever
+    // way a given app trims it.
+    //
+    // Was /images/journey.png: a 896x1195 PORTRAIT photo, so previews cropped
+    // a tall image into a wide slot and showed a band from the middle of it.
+    images: [{ url: "/brand/og-image.jpg", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Art Speaks | Handcrafted Artistic Curations",
     description:
       "Small items, big feelings — handmade phone charms, worry stones and bookmarks.",
-    images: ["/images/journey.png"],
+    images: ["/brand/og-image.jpg"],
   },
 };
 
