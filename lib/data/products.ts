@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Category, Product } from "@/lib/types";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { unwrap } from "./query-error";
 
 /**
  * Product and category reads, backed by Supabase.
@@ -132,10 +133,7 @@ const loadCategories = unstable_cache(
       .select("id, slug, name, accent_color, image_url")
       .order("sort_order");
 
-    if (error) {
-      console.error("getCategories:", error.message);
-      return [];
-    }
+    unwrap("getCategories", { data, error });
     return (data as CategoryRow[]).map(toCategory);
   },
   ["categories"],
@@ -165,10 +163,7 @@ export const getAllProducts = unstable_cache(
     .select(PRODUCT_COLUMNS)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("getAllProducts:", error.message);
-    return [];
-  }
+  unwrap("getAllProducts", { data, error });
   return (data as unknown as ProductRow[]).map(toProduct);
   },
   ["all-products"],
@@ -187,10 +182,7 @@ const loadProductsByCategory = unstable_cache(
     .not("categories", "is", null)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("getProductsByCategory:", error.message);
-    return [];
-  }
+  unwrap("getProductsByCategory", { data, error });
   return (data as unknown as ProductRow[])
     .map(toProduct)
     .filter((p) => p.categorySlug === slug);
@@ -219,10 +211,7 @@ const loadProductBySlug = unstable_cache(
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error) {
-    console.error("getProductBySlug:", error.message);
-    return null;
-  }
+  unwrap("getProductBySlug", { data, error });
   return data ? toProduct(data as unknown as ProductRow) : null;
   },
   ["product-by-slug"],
@@ -257,10 +246,7 @@ export const getBestSellers = unstable_cache(
     .eq("is_best_seller", true)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("getBestSellers:", error.message);
-    return [];
-  }
+  unwrap("getBestSellers", { data, error });
   return (data as unknown as ProductRow[]).map(toProduct);
   },
   ["best-sellers"],
@@ -276,10 +262,7 @@ export const getNewArrivals = unstable_cache(
     .eq("is_new_arrival", true)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("getNewArrivals:", error.message);
-    return [];
-  }
+  unwrap("getNewArrivals", { data, error });
   return (data as unknown as ProductRow[]).map(toProduct);
   },
   ["new-arrivals"],
@@ -333,10 +316,7 @@ export async function searchProducts(rawQuery: string): Promise<Product[]> {
     .or(filters.join(","))
     .order("name");
 
-  if (error) {
-    console.error("searchProducts:", error.message);
-    return [];
-  }
+  unwrap("searchProducts", { data, error });
 
   const exact = (data as unknown as ProductRow[]).map(toProduct);
   if (exact.length > 0) return exact;
@@ -384,10 +364,7 @@ async function searchProductsFuzzy(term: string): Promise<Product[]> {
     min_score: 0.25,
   });
 
-  if (error) {
-    console.error("searchProductsFuzzy:", error.message);
-    return [];
-  }
+  unwrap("searchProductsFuzzy", { data, error });
 
   return (data as FuzzyRow[]).map((row) => ({
     id: row.id,
@@ -424,10 +401,7 @@ export async function getWishlist(): Promise<Product[]> {
     .eq("customer_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("getWishlist:", error.message);
-    return [];
-  }
+  unwrap("getWishlist", { data, error });
 
   return (data as unknown as { products: ProductRow | null }[])
     .map((r) => r.products)
