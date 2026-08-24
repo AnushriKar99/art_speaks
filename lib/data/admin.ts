@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Product } from "@/lib/types";
+import { unwrap } from "./query-error";
 
 /**
  * Admin-side reads and writes for the studio pages.
@@ -67,10 +68,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
     .select(ADMIN_PRODUCT_COLUMNS)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("getAdminProducts:", error.message);
-    return [];
-  }
+  unwrap("getAdminProducts", { data, error });
   return (data as unknown as AdminProductRow[]).map(toAdminProduct);
 }
 
@@ -84,10 +82,7 @@ export async function getAdminProductBySlug(
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error) {
-    console.error("getAdminProductBySlug:", error.message);
-    return null;
-  }
+  unwrap("getAdminProductBySlug", { data, error });
   return data ? toAdminProduct(data as unknown as AdminProductRow) : null;
 }
 
@@ -161,10 +156,7 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
     )
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("getAdminOrders:", error.message);
-    return [];
-  }
+  unwrap("getAdminOrders", { data, error });
 
   return (data as unknown as OrderRow[]).map((o) => ({
     id: o.id,
@@ -254,8 +246,11 @@ export async function getSalesSummary(): Promise<SalesSummary> {
       .in("orders.status", COUNTED),
   ]);
 
-  if (monthly.error) console.error("getSalesSummary/monthly:", monthly.error.message);
-  if (items.error) console.error("getSalesSummary/items:", items.error.message);
+  // These two only logged and carried on, which meant a failed query rendered
+  // as ₹0 revenue — a number the studio would read as fact rather than as a
+  // broken page.
+  unwrap("getSalesSummary/monthly", monthly);
+  unwrap("getSalesSummary/items", items);
 
   // ---- months ----
   const byMonth = new Map<string, MonthlySales>();
