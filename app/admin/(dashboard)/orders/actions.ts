@@ -83,6 +83,38 @@ export async function setItemPrepared(
   if (!itemId) return { ok: false, error: "Missing item id." };
 
   const supabase = await createClient();
+
+  // The client already hides this control outside 'paid' — restated here
+  // because the client is where the button is, not where the rule is. A
+  // crafted call could still name any item id.
+  //
+  // Two queries, deliberately, not `.eq("orders.status", "paid")` chained onto
+  // the update. That reads as though it filters the row set the same way it
+  // does on a SELECT — it is the exact pattern lib/data/products.ts uses for
+  // "only if the joined row matches" — but PostgREST does not enforce a
+  // join-column filter on a mutation. Tested directly against a real pending
+  // order: the filtered call still updated it, and only the SELECT-shaped
+  // embed in the response came back null. It fails silently, which is worse
+  // than not having the check at all, since the code reads as protected.
+  const { data: item, error: lookupError } = await supabase
+    .from("order_items")
+    .select("orders(status)")
+    .eq("id", itemId)
+    .single();
+
+  if (lookupError || !item) {
+    return { ok: false, error: "That item could not be found." };
+  }
+
+  const orderStatus = (item as unknown as { orders: { status: string } | null })
+    .orders?.status;
+  if (orderStatus !== "paid") {
+    return {
+      ok: false,
+      error: "This can only be marked prepared once the order is paid.",
+    };
+  }
+
   const { error } = await supabase
     .from("order_items")
     .update({ prepared })

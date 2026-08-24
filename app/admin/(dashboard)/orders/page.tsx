@@ -265,8 +265,18 @@ async function OrderList({ active }: { active: FilterKey }) {
                         className="flex items-center gap-3 text-body-md"
                       >
                         {/* Studio bookkeeping, not a customer-facing part of
-                            the order — see PreparedToggle. */}
-                        <PreparedToggle itemId={l.id} prepared={l.prepared} />
+                            the order — see PreparedToggle. Shown only once an
+                            order is paid: preparing something nobody has
+                            confirmed buying is premature, and ticking boxes on
+                            a cancelled order is just confusing. A fixed-size
+                            spacer stands in for the other statuses so the
+                            product name still lines up down the list rather
+                            than shifting left whenever the toggle disappears. */}
+                        {o.status === "paid" ? (
+                          <PreparedToggle itemId={l.id} prepared={l.prepared} />
+                        ) : (
+                          <span className="w-6 h-6 shrink-0" aria-hidden />
+                        )}
                         <span className="flex-1 text-on-surface">
                           {l.quantity} × {l.productName}
                           {short && (
