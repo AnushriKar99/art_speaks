@@ -76,8 +76,14 @@ const STATUS_TONE: Record<AdminOrder["status"], string> = {
  * Cancel carries `confirm` because cancelled is terminal — this function
  * returns nothing from it, so there is no way back through the UI. Every other
  * action here is reversible, which is why it is the only one that asks.
+ *
+ * `allPrepared` gates "Mark shipped": shipping something the studio has not
+ * actually finished making is the one sequencing mistake this page can still
+ * make by itself, since nothing else in the order flow depends on the
+ * prepared ticks. Disabled rather than hidden, so the next step is still
+ * visible — just not clickable yet.
  */
-function nextActions(status: AdminOrder["status"]): NextAction[] {
+function nextActions(status: AdminOrder["status"], allPrepared: boolean): NextAction[] {
   switch (status) {
     case "pending":
       return [
@@ -89,7 +95,14 @@ function nextActions(status: AdminOrder["status"]): NextAction[] {
       // without it a mistaken "Mark paid" permanently lowers the count, and a
       // piece sitting in the studio eventually becomes unorderable.
       return [
-        { to: "shipped", label: "Mark shipped", busyLabel: "Marking shipped…", primary: true },
+        {
+          to: "shipped",
+          label: "Mark shipped",
+          busyLabel: "Marking shipped…",
+          primary: true,
+          disabled: !allPrepared,
+          disabledReason: "Tick every piece prepared before shipping.",
+        },
         { to: "pending", label: "Back to pending", busyLabel: "Reverting…", primary: false },
         { to: "cancelled", label: "Cancel", busyLabel: "Cancelling…", primary: false, confirm: true },
       ];
@@ -202,6 +215,7 @@ async function OrderList({ active }: { active: FilterKey }) {
         <div className="space-y-4">
           {shown.map((o) => {
             const address = formatAddress(o.address);
+            const allPrepared = o.lines.every((l) => l.prepared);
             return (
               <article
                 key={o.id}
@@ -306,7 +320,7 @@ async function OrderList({ active }: { active: FilterKey }) {
                   <OrderActions
                     orderId={o.id}
                     orderNumber={o.orderNumber}
-                    actions={nextActions(o.status)}
+                    actions={nextActions(o.status, allPrepared)}
                     stockDeducted={o.stockDeductedAt !== null}
                   />
                 </div>
