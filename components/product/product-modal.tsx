@@ -6,6 +6,7 @@ import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { useCart } from "@/lib/cart/cart-store";
+import { WishlistHeart } from "@/components/product/wishlist-heart";
 import Link from "next/link";
 
 export function ProductModal({
@@ -83,7 +84,7 @@ function ProductModalContent({
   const lowStock = product.stockCount <= 5;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6">
       <div
         className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
         onClick={onClose}
@@ -94,7 +95,10 @@ function ProductModalContent({
         aria-modal="true"
         aria-labelledby="product-modal-title"
         tabIndex={-1}
-        className="relative bg-surface-bright w-full max-w-2xl max-h-[90vh] md:max-h-[751px] rounded-3xl shadow-2xl flex flex-col overflow-hidden border-4 border-primary outline-none"
+        // Bounded to the viewport on every screen, rather than the page's own
+        // height — a tall description used to make the whole dialog grow past
+        // the screen instead of scrolling inside it.
+        className="relative bg-surface-bright w-full max-w-3xl max-h-[calc(100vh-1.5rem)] md:max-h-[36rem] rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden border-4 border-primary outline-none"
       >
         <button
           className="absolute top-4 right-4 z-[110] bg-white w-10 h-10 flex items-center justify-center rounded-full text-primary shadow-md hover:scale-110 active:scale-90 transition-all border-2 border-primary"
@@ -104,34 +108,39 @@ function ProductModalContent({
           <Icon name="close" />
         </button>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* Image */}
-          <div className="relative aspect-[4/3] md:aspect-video bg-surface-container-high overflow-hidden">
-            <ProductImage
-              src={product.images[activeImage]}
-              alt={product.name}
-              sizes="(min-width: 768px) 42rem, 100vw"
-              className="object-cover"
-            />
-            {product.images.length > 1 ? (
-              <div className="absolute bottom-4 left-0 w-full flex justify-center gap-2">
-                {product.images.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImage(i)}
-                    className={`w-3 h-3 rounded-full ${
-                      i === activeImage ? "bg-primary" : "bg-primary/30"
-                    }`}
-                    aria-label={`View image ${i + 1}`}
-                  />
-                ))}
-              </div>
-            ) : null}
-          </div>
+        {/* Image — fixed band on mobile, left half on desktop */}
+        <div className="relative shrink-0 h-44 sm:h-56 md:h-auto md:w-2/5 bg-surface-container-high overflow-hidden">
+          <ProductImage
+            src={product.images[activeImage]}
+            alt={product.name}
+            sizes="(min-width: 768px) 24rem, 100vw"
+            className="object-cover"
+          />
+          <WishlistHeart
+            productId={product.id}
+            productName={product.name}
+            position="top-3 left-3"
+          />
+          {product.images.length > 1 ? (
+            <div className="absolute bottom-3 left-0 w-full flex justify-center gap-2">
+              {product.images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveImage(i)}
+                  className={`w-3 h-3 rounded-full ${
+                    i === activeImage ? "bg-primary" : "bg-primary/30"
+                  }`}
+                  aria-label={`View image ${i + 1}`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
 
-          {/* Content */}
-          <div className="p-8 pb-32">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+        {/* Details — scrolls independently so the action bar stays put */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-6">
+            <div className="flex flex-col gap-4 mb-4 pr-10">
               <div>
                 <h2
                   id="product-modal-title"
@@ -144,14 +153,14 @@ function ProductModalContent({
                 </p>
               </div>
               {lowStock ? (
-                <div className="flex items-center gap-2 bg-lemon-yellow/50 px-4 py-2 rounded-2xl border-2 border-lemon-yellow shrink-0">
+                <div className="flex items-center gap-2 bg-lemon-yellow/50 px-4 py-2 rounded-2xl border-2 border-lemon-yellow shrink-0 self-start">
                   <Icon name="inventory_2" className="text-tertiary" />
                   <span className="font-label-caps text-on-tertiary-container">
                     Only {product.stockCount} left!
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 bg-secondary-container/60 px-4 py-2 rounded-2xl border-2 border-secondary-container shrink-0">
+                <div className="flex items-center gap-2 bg-secondary-container/60 px-4 py-2 rounded-2xl border-2 border-secondary-container shrink-0 self-start">
                   <Icon name="check_circle" className="text-secondary" />
                   <span className="font-label-caps text-on-secondary-container">
                     In stock
@@ -160,7 +169,7 @@ function ProductModalContent({
               )}
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <h4 className="font-label-caps text-label-caps text-outline uppercase tracking-widest mb-2">
                   Description
@@ -169,8 +178,8 @@ function ProductModalContent({
                   {product.description}
                 </p>
               </div>
-              <div className="bg-surface-container p-6 rounded-2xl border-2 border-dashed border-primary/30">
-                <h4 className="font-label-caps text-label-caps text-primary flex items-center gap-2 mb-3">
+              <div className="bg-surface-container p-4 rounded-2xl border-2 border-dashed border-primary/30">
+                <h4 className="font-label-caps text-label-caps text-primary flex items-center gap-2 mb-2">
                   <Icon name="edit" className="text-sm" />
                   Artisan Notes
                 </h4>
@@ -178,52 +187,54 @@ function ProductModalContent({
                   {product.artisanNote}
                 </p>
               </div>
+              <p className="text-center">
+                {/* The modal has no URL of its own, so this is how a customer
+                    gets a link they can paste into a WhatsApp reply or an
+                    Instagram story. */}
+                <Link
+                  href={`/shop/${product.slug}`}
+                  className="text-body-md text-primary underline hover:no-underline"
+                >
+                  Open full page
+                </Link>
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Sticky footer */}
-        <div className="absolute bottom-0 left-0 w-full bg-surface-bright/90 backdrop-blur-md p-6 border-t-2 border-primary-container flex items-center gap-4">
-          <div className="flex items-center border-2 border-primary rounded-xl overflow-hidden">
+          {/* Action bar — part of the flex column, not floated over the
+              content, so it never overlaps text on a short viewport. */}
+          <div className="shrink-0 bg-surface-bright/95 backdrop-blur-md p-4 border-t-2 border-primary-container flex items-center gap-3">
+            <div className="flex items-center border-2 border-primary rounded-xl overflow-hidden shrink-0">
+              <button
+                className="px-3 py-2 hover:bg-primary-container transition-colors"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <span className="px-3 font-bold">{qty}</span>
+              <button
+                className="px-3 py-2 hover:bg-primary-container transition-colors"
+                onClick={() =>
+                  setQty((q) => Math.min(product.stockCount, q + 1))
+                }
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
             <button
-              className="px-4 py-2 hover:bg-primary-container transition-colors"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              aria-label="Decrease quantity"
+              onClick={() => {
+                add(product.id, qty);
+                onClose();
+              }}
+              className="flex-1 bg-candy-pink text-primary font-display-lg-mobile text-[18px] py-3 rounded-xl shadow-[4px_4px_0px_#864d61] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
-              −
-            </button>
-            <span className="px-4 font-bold">{qty}</span>
-            <button
-              className="px-4 py-2 hover:bg-primary-container transition-colors"
-              onClick={() =>
-                setQty((q) => Math.min(product.stockCount, q + 1))
-              }
-              aria-label="Increase quantity"
-            >
-              +
+              <Icon name="shopping_cart" />
+              Add to Cart
             </button>
           </div>
-          <button
-            onClick={() => {
-              add(product.id, qty);
-              onClose();
-            }}
-            className="flex-1 bg-candy-pink text-primary font-display-lg-mobile text-[20px] py-4 rounded-xl shadow-[4px_4px_0px_#864d61] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3"
-          >
-            <Icon name="shopping_cart" />
-            Add to Cart
-          </button>
         </div>
-        <p className="mt-4 text-center">
-          {/* The modal has no URL of its own, so this is how a customer gets a
-              link they can paste into a WhatsApp reply or an Instagram story. */}
-          <Link
-            href={`/shop/${product.slug}`}
-            className="text-body-md text-primary underline hover:no-underline"
-          >
-            Open full page
-          </Link>
-        </p>
       </div>
     </div>
   );
