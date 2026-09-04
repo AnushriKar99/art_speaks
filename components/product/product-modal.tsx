@@ -6,7 +6,8 @@ import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
 import { useCart } from "@/lib/cart/cart-store";
-import { useSaveToggle } from "@/lib/wishlist/use-save-toggle";
+import { WishlistButton } from "@/components/product/wishlist-button";
+import { StockBadge } from "@/components/product/stock-badge";
 import Link from "next/link";
 
 export function ProductModal({
@@ -30,11 +31,9 @@ function ProductModalContent({
   onClose: () => void;
 }) {
   const { add } = useCart();
-  const { wishlist, saveToggle } = useSaveToggle();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
-  const saved = wishlist.has(product.id);
 
   // Escape, body scroll lock, and the focus handling a dialog needs.
   //
@@ -83,8 +82,6 @@ function ProductModalContent({
     };
   }, [onClose]);
 
-  const lowStock = product.stockCount <= 5;
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6">
       <div
@@ -100,7 +97,7 @@ function ProductModalContent({
         // Landscape on a laptop, stacked below it. Capped both ways so a short
         // viewport shrinks it rather than being overflowed — a fixed pixel
         // height could not, and used to render taller than the window.
-        className="relative bg-surface-bright w-full max-w-4xl max-h-[min(88vh,600px)] rounded-[2rem] shadow-2xl flex flex-col md:flex-row overflow-hidden border-4 border-primary outline-none"
+        className="relative bg-surface-bright w-full max-w-4xl max-h-[min(88vh,600px)] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border-4 border-primary outline-none"
       >
         <button
           className="absolute top-4 right-4 z-[110] bg-white w-10 h-10 flex items-center justify-center rounded-full text-primary shadow-md hover:scale-110 active:scale-90 transition-all border-2 border-primary"
@@ -110,38 +107,41 @@ function ProductModalContent({
           <Icon name="close" />
         </button>
 
-        {/* Photo.
-            `object-contain`, not cover: these are the studio's own phone
-            shots, portrait and square and occasionally wide, and nothing
-            records their shape — so any fixed frame with `cover` crops
-            somebody's work. Contain shows every photo whole and lets the
-            neutral panel take up the slack. */}
-        <div className="relative shrink-0 aspect-square sm:aspect-[4/3] md:aspect-auto md:w-1/2 md:h-auto bg-surface-container-high overflow-hidden">
-          <ProductImage
-            src={product.images[activeImage]}
-            alt={product.name}
-            sizes="(min-width: 768px) 28rem, 100vw"
-            className="object-contain"
-          />
-          {product.images.length > 1 ? (
-            <div className="absolute bottom-3 left-0 w-full flex justify-center gap-2">
-              {product.images.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImage(i)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    i === activeImage ? "bg-primary" : "bg-primary/30"
-                  }`}
-                  aria-label={`View image ${i + 1}`}
-                />
-              ))}
-            </div>
-          ) : null}
-        </div>
+        {/* Below md the photo scrolls away with the text, so the description
+            gets the whole panel instead of the sliver under a pinned image.
+            From md the same two blocks sit side by side, and only the details
+            column scrolls. */}
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar md:overflow-hidden md:flex md:flex-row">
+          {/* Photo.
+              `object-contain`, not cover: these are the studio's own phone
+              shots, portrait and square and occasionally wide, and nothing
+              records their shape — so any fixed frame with `cover` crops
+              somebody's work. Contain shows every photo whole and lets the
+              neutral panel take up the slack. */}
+          <div className="relative aspect-square sm:aspect-[4/3] md:aspect-auto md:w-1/2 md:shrink-0 bg-surface-container-high overflow-hidden">
+            <ProductImage
+              src={product.images[activeImage]}
+              alt={product.name}
+              sizes="(min-width: 768px) 28rem, 100vw"
+              className="object-contain"
+            />
+            {product.images.length > 1 ? (
+              <div className="absolute bottom-3 left-0 w-full flex justify-center gap-2">
+                {product.images.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(i)}
+                    className={`w-3 h-3 rounded-full transition-colors ${
+                      i === activeImage ? "bg-primary" : "bg-primary/30"
+                    }`}
+                    aria-label={`View image ${i + 1}`}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
 
-        {/* Details — scrolls on its own so the action row stays put. */}
-        <div className="flex-1 min-h-0 flex flex-col">
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-6">
+          <div className="md:flex-1 md:min-h-0 md:overflow-y-auto custom-scrollbar p-5 md:p-6">
             {/* Right padding on the heading only, to clear the close button
                 that floats over this column on the landscape layout. */}
             <div className="pr-12">
@@ -157,21 +157,7 @@ function ProductModalContent({
             </div>
 
             <div className="mt-4">
-              {lowStock ? (
-                <div className="inline-flex items-center gap-2 bg-lemon-yellow/50 px-4 py-2 rounded-2xl border-2 border-lemon-yellow">
-                  <Icon name="inventory_2" className="text-tertiary" />
-                  <span className="font-label-caps text-on-tertiary-container">
-                    Only {product.stockCount} left!
-                  </span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 bg-secondary-container/60 px-4 py-2 rounded-2xl border-2 border-secondary-container">
-                  <Icon name="check_circle" className="text-secondary" />
-                  <span className="font-label-caps text-on-secondary-container">
-                    In stock
-                  </span>
-                </div>
-              )}
+              <StockBadge stockCount={product.stockCount} />
             </div>
 
             <div className="mt-5 space-y-4">
@@ -207,50 +193,46 @@ function ProductModalContent({
               </p>
             </div>
           </div>
+        </div>
 
-          {/* Action row — in the flex flow, not floated over the text, so it
-              cannot cover the description on a short viewport. */}
-          <div className="shrink-0 bg-surface-bright/95 backdrop-blur-md p-4 border-t-2 border-primary-container flex items-center gap-3">
-            <div className="flex items-center border-2 border-primary rounded-xl overflow-hidden shrink-0">
-              <button
-                className="px-3 py-2 hover:bg-primary-container transition-colors"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <span className="px-3 font-bold">{qty}</span>
-              <button
-                className="px-3 py-2 hover:bg-primary-container transition-colors"
-                onClick={() => setQty((q) => Math.min(product.stockCount, q + 1))}
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
+        {/* Action row — outside the scrolling region, so it stays put while
+            the photo and text scroll past it.
+            The bar spans the panel, but from md its controls are inset past
+            the image column so they stay under the details they belong to
+            rather than stretching across the photo as well. */}
+        <div className="shrink-0 bg-surface-bright/95 backdrop-blur-md p-4 md:pl-[calc(50%+0.5rem)] border-t-2 border-primary-container flex items-center gap-3">
+          <div className="flex items-center border-2 border-primary rounded-xl overflow-hidden shrink-0">
             <button
-              onClick={() => {
-                add(product.id, qty);
-                onClose();
-              }}
-              className="flex-1 bg-candy-pink text-primary font-display-lg-mobile text-[18px] py-3 rounded-xl shadow-[4px_4px_0px_#864d61] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-2"
+              className="px-3 py-2 hover:bg-primary-container transition-colors"
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              aria-label="Decrease quantity"
             >
-              <Icon name="shopping_cart" />
-              Add to Cart
+              −
             </button>
-            {/* Uses the shared hook rather than <WishlistHeart />, which is
-                absolutely positioned for sitting on a product photo. */}
+            <span className="px-3 font-bold">{qty}</span>
             <button
-              onClick={() => void saveToggle(product.id)}
-              aria-label={`${saved ? "Remove" : "Save"} ${product.name}`}
-              aria-pressed={saved}
-              className={`shrink-0 w-12 h-12 rounded-xl border-2 border-primary flex items-center justify-center hover:scale-105 active:scale-95 transition-all ${
-                saved ? "bg-primary-container text-primary" : "bg-white text-candy-pink hover:text-primary"
-              }`}
+              className="px-3 py-2 hover:bg-primary-container transition-colors"
+              onClick={() => setQty((q) => Math.min(product.stockCount, q + 1))}
+              aria-label="Increase quantity"
             >
-              <Icon name="favorite" filled={saved} />
+              +
             </button>
           </div>
+          <button
+            onClick={() => {
+              add(product.id, qty);
+              onClose();
+            }}
+            className="flex-1 bg-candy-pink text-primary font-display-lg-mobile text-[18px] py-3 rounded-xl shadow-[4px_4px_0px_#864d61] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            <Icon name="shopping_cart" />
+            Add to Cart
+          </button>
+          <WishlistButton
+            productId={product.id}
+            productName={product.name}
+            className="w-12 h-12 rounded-xl"
+          />
         </div>
       </div>
     </div>
