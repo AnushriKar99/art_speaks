@@ -84,7 +84,14 @@ function ProductModalContent({
   const lowStock = product.stockCount <= 5;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-6">
+    <div
+      // Extra bottom clearance, not just symmetric padding: the site's own
+      // bottom tab bar is fixed and floats independently of this modal (flush
+      // 64px on mobile, a `bottom-4` pill on desktop), so centering with equal
+      // padding on every side let the two overlap on shorter screens. Reserve
+      // enough room below to clear it with margin at any viewport height.
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-28 md:p-6 md:pb-28"
+    >
       <div
         className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
         onClick={onClose}
@@ -95,10 +102,13 @@ function ProductModalContent({
         aria-modal="true"
         aria-labelledby="product-modal-title"
         tabIndex={-1}
-        // Bounded to the viewport on every screen, rather than the page's own
-        // height — a tall description used to make the whole dialog grow past
-        // the screen instead of scrolling inside it.
-        className="relative bg-surface-bright w-full max-w-3xl max-h-[calc(100vh-1.5rem)] md:max-h-[36rem] rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden border-4 border-primary outline-none"
+        // A cap that scales down on short viewports instead of overflowing
+        // them, and is capped in absolute terms so it doesn't balloon on a
+        // tall monitor either — min() of the two, in one arbitrary value so
+        // it applies the same way at every breakpoint. At 78vh, even a panel
+        // tall enough to hit the cap still leaves ~11vh clear above and
+        // below it, which is what keeps it off the floating bottom tab bar.
+        className="relative bg-surface-bright w-full max-w-2xl max-h-[min(78vh,620px)] rounded-3xl shadow-2xl flex flex-col overflow-hidden border-4 border-primary outline-none"
       >
         <button
           className="absolute top-4 right-4 z-[110] bg-white w-10 h-10 flex items-center justify-center rounded-full text-primary shadow-md hover:scale-110 active:scale-90 transition-all border-2 border-primary"
@@ -108,12 +118,12 @@ function ProductModalContent({
           <Icon name="close" />
         </button>
 
-        {/* Image — fixed band on mobile, left half on desktop */}
-        <div className="relative shrink-0 h-44 sm:h-56 md:h-auto md:w-2/5 bg-surface-container-high overflow-hidden">
+        {/* Image */}
+        <div className="relative aspect-[4/3] sm:aspect-video shrink-0 bg-surface-container-high overflow-hidden">
           <ProductImage
             src={product.images[activeImage]}
             alt={product.name}
-            sizes="(min-width: 768px) 24rem, 100vw"
+            sizes="(min-width: 768px) 42rem, 100vw"
             className="object-cover"
           />
           <WishlistHeart
@@ -140,7 +150,7 @@ function ProductModalContent({
         {/* Details — scrolls independently so the action bar stays put */}
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="flex-1 overflow-y-auto custom-scrollbar p-5 md:p-6">
-            <div className="flex flex-col gap-4 mb-4 pr-10">
+            <div className="flex flex-col gap-4 mb-4">
               <div>
                 <h2
                   id="product-modal-title"
