@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShopHeader } from "@/components/layout/shop-header";
 import { AccountMenu } from "@/components/layout/account-menu";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { Icon } from "@/components/ui/icon";
 import { getCategories } from "@/lib/data/products";
@@ -188,7 +187,6 @@ export default async function AboutPage() {
         </section>
       </main>
       <SiteFooter />
-      <BottomTabBar />
     </>
   );
 }

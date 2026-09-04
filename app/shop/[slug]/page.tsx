@@ -3,10 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShopHeader } from "@/components/layout/shop-header";
 import { AccountMenu } from "@/components/layout/account-menu";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductImage } from "@/components/ui/product-image";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import { WishlistButton } from "@/components/product/wishlist-button";
+import { StockBadge } from "@/components/product/stock-badge";
 import { Icon } from "@/components/ui/icon";
 import {
   getCategories,
@@ -56,7 +57,6 @@ export default async function ProductPage({ params }: { params: Params }) {
 
   const related = await getRelatedProducts(product.categorySlug, product.slug);
   const category = categories.find((c) => c.slug === product.categorySlug);
-  const soldOut = product.stockCount === 0;
 
   return (
     <>
@@ -97,13 +97,12 @@ export default async function ProductPage({ params }: { params: Params }) {
               <p className="font-headline-md text-headline-md text-on-surface mb-1">
                 {formatPrice(product.priceCents, product.currency)}
               </p>
-              <p
-                className={`text-body-md mb-6 ${soldOut ? "text-error" : "text-on-surface-variant"}`}
-              >
-                {soldOut
-                  ? "Sold out — message us if you'd like one made"
-                  : `${product.stockCount} left`}
-              </p>
+              <div className="mb-6 mt-3">
+                <StockBadge
+                  stockCount={product.stockCount}
+                  soldOutLabel="Sold out — message us if you'd like one made"
+                />
+              </div>
 
               {product.description && (
                 <p className="text-body-md text-on-surface-variant leading-relaxed mb-4">
@@ -122,12 +121,14 @@ export default async function ProductPage({ params }: { params: Params }) {
                   productName={product.name}
                   stockCount={product.stockCount}
                 />
-                <Link
-                  href="/cart"
-                  className="text-primary font-label-caps text-label-caps uppercase tracking-wider hover:underline"
-                >
-                  View basket
-                </Link>
+                <WishlistButton
+                  productId={product.id}
+                  productName={product.name}
+                  label="Wishlist"
+                  // Round, with the same offset shadow, so it reads as a pair
+                  // with the cart control beside it.
+                  className="rounded-full px-5 h-10 shadow-[4px_4px_0px_#864d61]"
+                />
               </div>
             </div>
           </div>
@@ -153,7 +154,6 @@ export default async function ProductPage({ params }: { params: Params }) {
         </div>
       </main>
       <SiteFooter />
-      <BottomTabBar />
     </>
   );
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ShopHeader } from "@/components/layout/shop-header";
 import { AccountMenu } from "@/components/layout/account-menu";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { Icon } from "@/components/ui/icon";
 import { getCategories } from "@/lib/data/products";
 import { EMAIL_ADDRESS, buildWhatsAppLink } from "@/lib/contact";
@@ -150,7 +149,6 @@ export default async function RefundPolicyPage() {
         </section>
       </main>
       <SiteFooter />
-      <BottomTabBar />
     </>
   );
 }

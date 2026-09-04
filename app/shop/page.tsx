@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ShopHeader } from "@/components/layout/shop-header";
 import { AccountMenu } from "@/components/layout/account-menu";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ProductGrid } from "@/components/product/product-grid";
 import { Icon } from "@/components/ui/icon";
 import { getCategories, getCollection, sortProducts } from "@/lib/data/products";
@@ -59,7 +58,12 @@ export default async function ShopPage({
 
   return (
     <>
-      <ShopHeader categories={categories} account={<AccountMenu />} query={q} />
+      <ShopHeader
+        categories={categories}
+        account={<AccountMenu />}
+        query={q}
+        isWishlistView={collectionSlug === "wishlist"}
+      />
       <main className="min-h-screen checkered-bg pb-32 relative">
         {/* Floating doodles */}
         <div
@@ -112,7 +116,6 @@ export default async function ShopPage({
         </section>
       </main>
       <SiteFooter />
-      <BottomTabBar />
     </>
   );
 }

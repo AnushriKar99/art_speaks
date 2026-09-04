@@ -47,9 +47,13 @@ export function AdminNavDesktop() {
 }
 
 /**
- * Fixed bottom bar below `lg`. Mirrors the storefront's bottom-tab-bar so the
- * studio side feels like the same app — and puts the offline-sale form in
- * thumb reach, which is where it gets used: standing at a market stall.
+ * Fixed bottom bar below `lg`. Puts the offline-sale form in thumb reach,
+ * which is where it gets used: standing at a market stall.
+ *
+ * The storefront used to carry a matching bar, and this mirrored it so the
+ * studio side felt like the same app. That one is gone — the storefront now
+ * navigates entirely from its top bar — but this stays: the admin screens are
+ * a working tool used one-handed, which the shop is not.
  */
 export function AdminNavMobile() {
   const pathname = usePathname();
