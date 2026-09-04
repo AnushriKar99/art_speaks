@@ -7,6 +7,7 @@ import { DesktopNav, MobileNav } from "@/components/layout/header-nav";
 import type { Category } from "@/lib/types";
 import { CartBadge } from "@/components/cart/cart-badge";
 import { BrandMark } from "@/components/layout/brand-mark";
+import { HeaderSearch } from "@/components/layout/header-search";
 
 export function SiteHeader({
   categories,
@@ -17,6 +18,7 @@ export function SiteHeader({
   account?: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <>
@@ -35,6 +37,14 @@ export function SiteHeader({
           </div>
           <DesktopNav categories={categories} />
           <div className="flex items-center gap-4">
+            <button
+              className="text-on-surface-variant hover:scale-105 transition-transform duration-200 active:scale-95"
+              aria-label="Search"
+              aria-expanded={searchOpen}
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              <Icon name="search" />
+            </button>
             <Link
               href="/shop?collection=wishlist"
               className="text-primary hover:scale-105 transition-transform duration-200"
@@ -54,6 +64,18 @@ export function SiteHeader({
           </div>
         </div>
       </header>
+
+      {/* Search drops below the bar rather than growing it: this header is
+          `fixed h-16` and the page is offset against exactly that height, so
+          expanding it in flow would shift or overlap the content beneath.
+          Outside <header> for the same containing-block reason as the drawer. */}
+      {searchOpen ? (
+        <div className="fixed top-16 left-0 w-full z-50 bg-background/95 backdrop-blur-md shadow-[0_4px_20px_-5px_rgba(255,183,206,0.2)] px-margin-mobile py-3">
+          <div className="max-w-container-max mx-auto">
+            <HeaderSearch />
+          </div>
+        </div>
+      ) : null}
 
       {/* Left-side navigation panel (rendered outside <header> — its
           backdrop-blur establishes a containing block that would otherwise

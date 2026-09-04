@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShopHeader } from "@/components/layout/shop-header";
 import { AccountMenu } from "@/components/layout/account-menu";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductImage } from "@/components/ui/product-image";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
@@ -153,7 +152,6 @@ export default async function ProductPage({ params }: { params: Params }) {
         </div>
       </main>
       <SiteFooter />
-      <BottomTabBar />
     </>
   );
 }

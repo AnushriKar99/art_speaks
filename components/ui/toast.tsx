@@ -45,8 +45,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         <div
           role="status"
           aria-live="polite"
-          // Sits above the bottom tab bar so it is never hidden behind it.
-          className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[min(24rem,calc(100vw-2rem))]"
+          // Was lifted to bottom-20 on mobile to clear the storefront's bottom
+          // tab bar. That bar is gone, so it sits at the same offset either way.
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[min(24rem,calc(100vw-2rem))]"
         >
           <div className="flex items-center gap-3 bg-inverse-surface text-inverse-on-surface rounded-2xl shadow-xl px-4 py-3">
             <p className="text-body-md flex-1">{toast.message}</p>

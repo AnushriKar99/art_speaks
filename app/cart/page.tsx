@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ShopHeader } from "@/components/layout/shop-header";
 import { AccountMenu } from "@/components/layout/account-menu";
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 import { CartView } from "@/components/cart/cart-view";
 import { Icon } from "@/components/ui/icon";
 import { getCategories } from "@/lib/data/products";
@@ -45,7 +44,6 @@ export default async function CartPage() {
           <CartView />
         </section>
       </main>
-      <BottomTabBar />
     </>
   );
 }
