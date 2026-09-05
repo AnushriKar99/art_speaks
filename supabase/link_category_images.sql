@@ -14,6 +14,8 @@
 --   categories/fridge-magnets.jpg
 --   categories/tote-bags.jpg
 --   categories/stickers.jpg
+--   categories/trinkets.jpg
+--   categories/others.jpg
 --
 -- Then run this. It builds each URL from the slug, so there is nothing to
 -- paste. A category with no matching file keeps the shared placeholder rather
@@ -33,7 +35,7 @@
 -- WARNING: this script sets EVERY category with a null image_url, so it will
 -- point categories at files that were never uploaded. The card checks whether
 -- the URL is set, not whether the file loads, so those go from a tidy "Coming
--- soon" placeholder to a broken image. Unless you have just uploaded all eight,
+-- soon" placeholder to a broken image. Unless you have just uploaded all ten,
 -- link one row at a time:
 --
 --   update public.categories

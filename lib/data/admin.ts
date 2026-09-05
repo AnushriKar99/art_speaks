@@ -14,6 +14,8 @@ import { unwrap } from "./query-error";
 
 /** A product as the studio sees it — includes fields the storefront never needs. */
 export interface AdminProduct extends Product {
+  /** Display name of the category, for searching the way the storefront does. */
+  categoryName: string;
   isActive: boolean;
   categoryId: string | null;
   updatedAt: string;
@@ -34,11 +36,11 @@ type AdminProductRow = {
   is_new_arrival: boolean;
   category_id: string | null;
   updated_at: string;
-  categories: { slug: string } | null;
+  categories: { slug: string; name: string } | null;
 };
 
 const ADMIN_PRODUCT_COLUMNS =
-  "id, slug, name, description, artisan_note, price_cents, currency, stock_count, images, is_active, is_best_seller, is_new_arrival, category_id, updated_at, categories(slug)";
+  "id, slug, name, description, artisan_note, price_cents, currency, stock_count, images, is_active, is_best_seller, is_new_arrival, category_id, updated_at, categories(slug, name)";
 
 function toAdminProduct(row: AdminProductRow): AdminProduct {
   return {
@@ -52,6 +54,7 @@ function toAdminProduct(row: AdminProductRow): AdminProduct {
     stockCount: row.stock_count,
     images: row.images ?? [],
     categorySlug: row.categories?.slug ?? "",
+    categoryName: row.categories?.name ?? "",
     isBestSeller: row.is_best_seller,
     isNewArrival: row.is_new_arrival,
     isActive: row.is_active,
@@ -117,6 +120,8 @@ export interface AdminOrder {
   contactEmail: string | null;
   address: Record<string, string> | null;
   totalCents: number;
+  /** Part of the total taken for unlisted goods (0021); 0 for every online order. */
+  extraCents: number;
   currency: string;
   stockDeductedAt: string | null;
   createdAt: string;
@@ -132,6 +137,7 @@ type OrderRow = {
   contact_email: string | null;
   shipping_address: Record<string, string> | null;
   total_cents: number;
+  extra_cents: number;
   currency: string;
   stock_deducted_at: string | null;
   created_at: string;
@@ -155,7 +161,7 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, total_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, prepared, products(stock_count))",
+      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, total_cents, extra_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, prepared, products(stock_count))",
     )
     .order("created_at", { ascending: false });
 
@@ -172,6 +178,7 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
     contactEmail: o.contact_email,
     address: o.shipping_address,
     totalCents: o.total_cents,
+    extraCents: o.extra_cents,
     currency: o.currency,
     stockDeductedAt: o.stock_deducted_at,
     createdAt: o.created_at,

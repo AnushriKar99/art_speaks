@@ -1835,6 +1835,426 @@ on conflict (month) do update
 
 
 -- ####################################################################
+-- ### supabase/migrations/0017_flat_shipping_fee.sql
+-- ####################################################################
+
+-- ============================================================
+-- Charge a flat ₹80 shipping fee, computed here rather than trusted from the
+-- browser.
+--
+-- orders.shipping_cents has existed since 0001 and was hardcoded to 0 —
+-- shipping was settled by hand over WhatsApp, outside the recorded total. The
+-- studio now wants a fixed fee shown up front, which means it has to be part
+-- of what this function charges, not just a number the cart page prints.
+--
+-- Same reasoning CLAUDE.md already states for prices: nothing about what a
+-- customer pays should be trustable from the client. The fee is a constant
+-- inside this function, so a crafted request cannot claim its own shipping
+-- cost any more than it can claim its own price.
+--
+-- shipping_cents is returned alongside the resolved lines, so the confirmation
+-- screen and the WhatsApp message can show "Subtotal + Shipping = Total" built
+-- from what the database actually charged — not recomputed client-side, which
+-- is exactly the mismatch this schema has avoided everywhere else.
+--
+-- Idempotent: safe to run more than once.
+-- ============================================================
+
+drop function if exists public.place_whatsapp_order(jsonb, text, text, jsonb, text);
+
+create function public.place_whatsapp_order(
+  items         jsonb,
+  customer_name text,
+  phone         text,
+  address       jsonb default null,
+  email         text default null
+)
+returns table (
+  order_number   bigint,
+  subtotal_cents int,
+  shipping_cents int,
+  total_cents    int,
+  lines          jsonb
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  max_lines      constant int := 50;
+  -- ₹80. A named constant so the one call site raising it later is a search
+  -- for this line, not a hunt through the function for a bare 8000.
+  flat_shipping  constant int := 8000;
+  basket         jsonb;
+  new_order_id   uuid;
+  subtotal       int;
+  short_name     text;
+  short_have     int;
+  short_want     int;
+begin
+  if items is null or jsonb_typeof(items) <> 'array' then
+    raise exception 'No items in the order';
+  end if;
+  if jsonb_array_length(items) = 0 then
+    raise exception 'No items in the order';
+  end if;
+  if jsonb_array_length(items) > max_lines then
+    raise exception 'Too many different items in one order';
+  end if;
+
+  if customer_name is null or btrim(customer_name) = '' then
+    raise exception 'Please give a name';
+  end if;
+  if phone is null or btrim(phone) = '' then
+    raise exception 'Please give a phone number';
+  end if;
+
+  -- Prices come from the products row; there is no price parameter, so a
+  -- browser cannot set what something costs. Grouped by product, so sending
+  -- the same id twice cannot slip past the stock check by splitting quantity.
+  --
+  -- Checked against raw stock_count only — two pending orders can both claim
+  -- the last unit, and the second confirmation restores it. Accepted
+  -- deliberately (2026-08-20, see docs/ROADMAP.md "Not doing"): pieces can be
+  -- remade, so reserving stock at order time would refuse sales the studio
+  -- would happily fulfil, for a race that is rare at this volume.
+  select jsonb_agg(x)
+    into basket
+    from (
+      select jsonb_build_object(
+               'product_id',       p.id,
+               'name',             p.name,
+               'unit_price_cents', p.price_cents,
+               'quantity',         sum(greatest((i->>'quantity')::int, 1)),
+               'stock_count',      p.stock_count
+             ) as x
+        from jsonb_array_elements(items) i
+        join public.products p
+          on p.id = (i->>'product_id')::uuid
+         and p.is_active
+         and p.stock_count > 0
+       where (i->>'quantity')::int > 0
+       group by p.id, p.name, p.price_cents, p.stock_count
+    ) grouped;
+
+  if basket is null or jsonb_array_length(basket) = 0 then
+    raise exception 'None of those pieces are available';
+  end if;
+
+  select b->>'name', (b->>'stock_count')::int, (b->>'quantity')::int
+    into short_name, short_have, short_want
+    from jsonb_array_elements(basket) b
+   where (b->>'quantity')::int > (b->>'stock_count')::int
+   order by b->>'name'
+   limit 1;
+
+  if short_name is not null then
+    raise exception 'Only % of "%" left — you asked for %',
+      short_have, short_name, short_want;
+  end if;
+
+  select sum((b->>'unit_price_cents')::int * (b->>'quantity')::int)
+    into subtotal
+    from jsonb_array_elements(basket) b;
+
+  insert into public.orders (
+    channel, status,
+    contact_email, contact_phone, shipping_address,
+    subtotal_cents, shipping_cents, total_cents, currency
+  )
+  values (
+    'whatsapp', 'pending',
+    nullif(btrim(coalesce(email, '')), ''),
+    btrim(phone),
+    coalesce(address, '{}'::jsonb) || jsonb_build_object('name', btrim(customer_name)),
+    subtotal, flat_shipping, subtotal + flat_shipping, 'INR'
+  )
+  returning id into new_order_id;
+
+  insert into public.order_items (
+    order_id, product_id, product_name, unit_price_cents, quantity
+  )
+  select
+    new_order_id,
+    (b->>'product_id')::uuid,
+    b->>'name',
+    (b->>'unit_price_cents')::int,
+    (b->>'quantity')::int
+  from jsonb_array_elements(basket) b;
+
+  return query
+    select o.order_number, o.subtotal_cents, o.shipping_cents, o.total_cents,
+           -- Only what was written. stock_count is dropped: it is an internal
+           -- detail of the availability check, not something a customer needs.
+           (select jsonb_agg(jsonb_build_object(
+                     'name', b->>'name',
+                     'quantity', (b->>'quantity')::int,
+                     'unit_price_cents', (b->>'unit_price_cents')::int))
+              from jsonb_array_elements(basket) b)
+    from public.orders o
+    where o.id = new_order_id;
+end;
+$$;
+
+grant execute on function public.place_whatsapp_order(jsonb, text, text, jsonb, text)
+  to anon, authenticated;
+
+
+-- ####################################################################
+-- ### supabase/migrations/0018_prepared_flag.sql
+-- ####################################################################
+
+-- ============================================================
+-- Track which line items the studio has physically prepared.
+--
+-- Studio-only bookkeeping, tracked per order line rather than per order: a
+-- multi-item order can have some pieces ready and others still being made,
+-- and "prepared" for the whole order would hide that.
+--
+-- Not the order lifecycle. pending/paid/shipped/delivered/cancelled (0001)
+-- describes the transaction — has it been paid, has it left the building.
+-- Prepared describes physical work in the studio and has no bearing on any
+-- of those; an order can be paid and not yet prepared, or prepared and not
+-- yet paid if the studio gets ahead of itself. Kept as its own column so the
+-- two do not tangle.
+--
+-- In the database rather than localStorage, because the admin checks orders
+-- from more than one device — a laptop at the desk, a phone at a market
+-- stall — and a tick that only lives in one browser is not tracking, it is a
+-- note that reads as done from one screen and undone from every other.
+--
+-- Idempotent: safe to run more than once.
+-- ============================================================
+
+alter table public.order_items
+  add column if not exists prepared boolean not null default false;
+
+-- ---------- who can flip it ----------
+-- order_items has never had an UPDATE policy: every existing write goes
+-- through place_whatsapp_order or record_offline_sale, both SECURITY DEFINER,
+-- so RLS was never in the path. This one is a direct admin edit from the
+-- dashboard, so it needs a policy of its own — same shape as "admins update
+-- orders" in 0003.
+drop policy if exists "admins update order items" on public.order_items;
+create policy "admins update order items"
+  on public.order_items for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+
+-- ####################################################################
+-- ### supabase/migrations/0019_categories_trinkets_and_others.sql
+-- ####################################################################
+
+-- ============================================================
+-- Two more categories: Trinkets, and an Others catch-all.
+--
+-- Categories are seeded, not managed through the admin panel — that was
+-- skipped deliberately (docs/ROADMAP.md, "Not doing"), on the grounds that
+-- adding one is a single insert once or twice a year. This is that insert.
+--
+-- It lives in a migration rather than only in seed_categories.sql because the
+-- seed runs against a fresh project and does nothing to the live one. Putting
+-- it here means the rows arrive both places from a single source.
+--
+-- sort_order continues from 8, and Others is last on purpose: a catch-all
+-- reads as a leftovers bin wherever it sits, so it should sit at the end.
+--
+-- image_url is left null. The category card checks whether the URL is set,
+-- not whether the image loads, so an unlinked category shows a tidy "Coming
+-- soon" tile tinted with its own accent. Do NOT run link_category_images.sql
+-- until photos for these two are actually uploaded — it sets every null row
+-- and would turn those placeholders into broken images.
+--
+-- Idempotent: on conflict (slug) do nothing.
+-- ============================================================
+
+insert into public.categories (slug, name, accent_color, sort_order) values
+  ('trinkets', 'Trinkets', '#C8F0B4',  9),
+  ('others',   'Others',   '#EAD9C9', 10)
+on conflict (slug) do nothing;
+
+
+-- ####################################################################
+-- ### supabase/migrations/0020_reorder_categories_trinkets_before_tote_bags.sql
+-- ####################################################################
+
+-- ============================================================
+-- Move Trinkets ahead of Tote Bags and Stickers on the homepage scroller.
+--
+-- 0019 appended Trinkets and Others at 9 and 10, which put Trinkets — a
+-- category with real stock — behind the two that have neither photos nor
+-- pieces yet, so the row read as three "Coming soon" tiles in a run before
+-- anything you could actually buy.
+--
+-- Stated as the whole running order rather than as a nudge to one row.
+-- getCategories() sorts on sort_order with no tiebreaker, so two categories
+-- sharing a number come back in whatever order Postgres feels like that day —
+-- listing all ten is how the file makes a collision visible instead of
+-- accidental.
+--
+-- seed_categories.sql carries the same numbers for the original eight, and
+-- has to: in setup_new_project.sql every migration runs before the seeds, so
+-- on a fresh project this update finds no tote-bags row to fix and the seed's
+-- own value is what survives.
+--
+-- Idempotent: assigns absolute values, so re-running changes nothing.
+-- ============================================================
+
+update public.categories as c
+   set sort_order = v.sort_order
+  from (values
+    ('phone-charms',            1),
+    ('keychains-worry-stones',  2),
+    ('bookmarks',               3),
+    ('paintings',               4),
+    ('bag-charms',              5),
+    ('fridge-magnets',          6),
+    ('trinkets',                7),
+    ('tote-bags',               8),
+    ('stickers',                9),
+    ('others',                 10)
+  ) as v(slug, sort_order)
+ where c.slug = v.slug
+   and c.sort_order is distinct from v.sort_order;
+
+
+-- ####################################################################
+-- ### supabase/migrations/0021_offline_sale_extra.sql
+-- ####################################################################
+
+-- ============================================================
+-- An offline sale can carry an "extra" amount: money taken for things that
+-- are not in the catalogue.
+--
+-- Stalls sell what the shop does not list — offcuts, a one-off nobody
+-- photographed, a bundle priced on the spot. Today that money has nowhere to
+-- go, so the day's takings recorded here are smaller than the day's takings
+-- in the tin.
+--
+-- Recorded as an amount on the order, NOT as a line item. The same reasoning
+-- as sales_history in 0016: a line item asserts a piece, a price and a
+-- quantity that were never recorded. Inventing one would inflate "Pieces
+-- sold", put a fictional entry in the best-seller ranking, and — because
+-- order_items.product_id would be null — describe stock that never moved.
+-- An amount is the only part of this that is actually known.
+--
+-- It reaches the reports for free: monthly_sales (0006) and therefore
+-- sales_by_month (0016) sum orders.total_cents, and extra is inside it.
+-- Revenue counts it; unit counts, which read order_items, correctly do not.
+--
+-- Idempotent: safe to run more than once.
+-- ============================================================
+
+-- ---------- 1. the column ----------
+alter table public.orders
+  add column if not exists extra_cents int not null default 0;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'orders_extra_cents_check'
+  ) then
+    alter table public.orders
+      add constraint orders_extra_cents_check check (extra_cents >= 0);
+  end if;
+end $$;
+
+comment on column public.orders.extra_cents is
+  'Part of subtotal_cents taken for unlisted goods. Descriptive only — the '
+  'money is already in the totals; this says how much of it had no line item.';
+
+-- ---------- 2. the function ----------
+-- Dropped rather than replaced: adding a parameter creates an overload, and
+-- PostgREST resolves rpc() calls by argument name — two candidates both
+-- satisfied by {items, sold_on} is an ambiguity error at call time, not a
+-- helpful default.
+--
+-- `note` goes with it. It has been in the signature since 0009 and the body
+-- has never once read it; PostgREST advertises it, so it reads as a feature
+-- that quietly discards what you put in it.
+drop function if exists public.record_offline_sale(jsonb, date, text);
+
+create or replace function public.record_offline_sale(
+  items       jsonb,
+  sold_on     date default current_date,
+  extra_cents int  default 0
+)
+returns uuid
+language plpgsql
+security invoker
+as $$
+declare
+  new_order_id uuid;
+  items_cents  int;
+  extra        int := coalesce(extra_cents, 0);
+  has_items    boolean := items is not null and jsonb_typeof(items) = 'array'
+                          and jsonb_array_length(items) > 0;
+begin
+  if extra < 0 then
+    raise exception 'An extra amount cannot be negative';
+  end if;
+
+  -- Either half is enough on its own: a day may be all catalogue pieces, all
+  -- unlisted oddments, or both.
+  if not has_items and extra = 0 then
+    raise exception 'A sale needs at least one item or an extra amount';
+  end if;
+
+  select coalesce(sum((i->>'quantity')::int * (i->>'unit_price_cents')::int), 0)
+    into items_cents
+    from jsonb_array_elements(coalesce(items, '[]'::jsonb)) i;
+
+  insert into public.orders (
+    channel, status, contact_email,
+    subtotal_cents, shipping_cents, total_cents, extra_cents, currency,
+    created_at
+  )
+  values (
+    'offline', 'paid', null,
+    -- Extra is inside the subtotal, so subtotal + shipping = total still holds
+    -- for every order in the table. extra_cents alongside it says how much of
+    -- that subtotal no line item accounts for.
+    items_cents + extra, 0, items_cents + extra, extra, 'INR',
+    sold_on::timestamptz
+  )
+  returning id into new_order_id;
+
+  insert into public.order_items (
+    order_id, product_id, product_name, unit_price_cents, quantity
+  )
+  select
+    new_order_id, p.id, p.name,
+    (i->>'unit_price_cents')::int,
+    (i->>'quantity')::int
+  from jsonb_array_elements(coalesce(items, '[]'::jsonb)) i
+  join public.products p on p.id = (i->>'product_id')::uuid
+  where (i->>'quantity')::int > 0;
+
+  -- Only meaningful when pieces were actually tapped. An extra-only sale has
+  -- no line items by design, and must not be read as every id having failed
+  -- to resolve.
+  if has_items
+     and not exists (select 1 from public.order_items where order_id = new_order_id)
+  then
+    raise exception 'None of those products could be found';
+  end if;
+
+  -- Stamped even with no line items, so decrement_stock_on_confirm (0010) has
+  -- nothing left to do if this order is ever updated.
+  update public.orders
+     set stock_deducted_at = now()
+   where id = new_order_id;
+
+  return new_order_id;
+end;
+$$;
+
+-- ---------- try it ----------
+--   select public.record_offline_sale('[]'::jsonb, current_date, 25000);  -- ₹250, nothing listed
+
+
+-- ####################################################################
 -- ### supabase/seed_categories.sql
 -- ####################################################################
 
@@ -1843,6 +2263,16 @@ on conflict (month) do update
 -- Images intentionally omitted (image_url stays null) — add later via the
 -- Table Editor or:  update public.categories set image_url = '...' where slug = '...';
 -- Re-runnable: on conflict (slug) do nothing.
+--
+-- NOT the whole list. Categories added after this file was written live in
+-- numbered migrations instead, so they reach the live project and not only a
+-- fresh one — see 0019 for Trinkets and Others. Kept out of here on purpose:
+-- a row defined in two files is a row that can drift.
+--
+-- The sort_order gap at 7 is not a mistake: 0020 states the full running order
+-- and puts Trinkets there. The numbers below must agree with it. Migrations
+-- all run before the seeds in setup_new_project.sql, so on a fresh project
+-- 0020 finds none of these rows and whatever is written here is what sticks.
 -- ============================================================
 
 insert into public.categories (slug, name, accent_color, sort_order) values
@@ -1852,8 +2282,8 @@ insert into public.categories (slug, name, accent_color, sort_order) values
   ('paintings',              'Paintings',              '#FDFFAB', 4),
   ('bag-charms',             'Bag Charms',             '#FFD3B0', 5),
   ('fridge-magnets',         'Fridge Magnets',         '#AEE2FF', 6),
-  ('tote-bags',              'Tote Bags',              '#C7CEEA', 7),
-  ('stickers',               'Stickers',               '#FFAAA7', 8)
+  ('tote-bags',              'Tote Bags',              '#C7CEEA', 8),
+  ('stickers',               'Stickers',               '#FFAAA7', 9)
 on conflict (slug) do nothing;
 
 

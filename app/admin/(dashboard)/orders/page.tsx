@@ -306,6 +306,21 @@ async function OrderList({ active }: { active: FilterKey }) {
                       </li>
                     );
                   })}
+
+                  {/* Without this the total of an offline sale is larger than
+                      its lines add up to, with nothing on screen saying why.
+                      No PreparedToggle: there is no piece to set aside. */}
+                  {o.extraCents > 0 && (
+                    <li className="flex items-center gap-3 text-body-md">
+                      <span className="w-6 h-6 shrink-0" aria-hidden />
+                      <span className="flex-1 text-on-surface-variant italic">
+                        Unlisted items
+                      </span>
+                      <span className="text-on-surface-variant whitespace-nowrap">
+                        {formatPrice(o.extraCents, o.currency)}
+                      </span>
+                    </li>
+                  )}
                 </ul>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/60 pt-3">

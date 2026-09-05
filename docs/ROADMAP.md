@@ -57,6 +57,19 @@ Last updated 2026-08-18.
   the live figures. Deliberately not written as `orders` rows: that would have
   deducted stock for pieces long gone and invented line items nobody recorded.
 
+- **Two more categories.** `0019` adds Trinkets and Others; `0020` states the
+  full running order and puts Trinkets ahead of Tote Bags and Stickers, which
+  have neither photos nor pieces yet. `seed_categories.sql` carries the same
+  numbers for the original eight and has to — migrations all run before the
+  seeds in `setup_new_project.sql`.
+- **Offline sales take an extra amount.** `0021` adds `orders.extra_cents` for
+  money taken at a stall for things the shop doesn't list. Recorded as an
+  amount, never as a line item — same reasoning as `sales_history`: a line item
+  asserts a piece, price and quantity nobody wrote down. So it counts as
+  revenue (which sums `total_cents`) but not as pieces sold (which reads
+  `order_items`). The tap-grid search now matches category as well as name,
+  the way the storefront's does.
+
 ## Verify (blocked on dashboard access)
 
 - [ ] **Confirm `0004` applied.** Column grants aren't visible through the anon
@@ -264,7 +277,7 @@ argument gets weaker once custom SMTP is set up.
 | Add-to-cart animation | The item should visibly fly into the basket when added, rather than only the header count changing. Purely presentational — the cart itself works. |
 | ~~Wishlist persistence~~ | **Done** — saves to the `wishlist` table, requires an account, RLS-enforced. Signed-out visitors get a sign-in prompt. |
 | ~~Storefront search~~ | **Done** — substring match across name, description, artisan note, slug and category, with pg_trgm typo tolerance as a fallback. |
-| Category images | 6 of 8 uploaded and linked. Still needed: **tote-bags, stickers** — these show a tinted "Coming soon" tile until then. Resize the long edge to 800px to match the rest, upload into `product-images/categories/`, then link that one row. Do **not** run `link_category_images.sql` while any are missing: it sets every null row, and the card checks whether the URL is set rather than whether it loads, so the remaining ones become broken images. |
+| Category images | 6 of 10 uploaded and linked. Still needed: **tote-bags, stickers, trinkets, others** — these show a tinted "Coming soon" tile until then. Resize the long edge to 800px to match the rest, upload into `product-images/categories/`, then link that one row. Do **not** run `link_category_images.sql` while any are missing: it sets every null row, and the card checks whether the URL is set rather than whether it loads, so the remaining ones become broken images. |
 | ~~Logo image~~ | **Done** — real logo, no Stitch hotlinks left anywhere. |
 | ~~Custom order section image~~ | **Done** — a real studio flat-lay, served from `public/images/`. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
