@@ -21,14 +21,30 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const [soldOn, setSoldOn] = useState(today());
   const [search, setSearch] = useState("");
+  /** Kept as the typed string so the box can be empty rather than showing 0. */
+  const [extra, setExtra] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [capped, setCapped] = useState<string | null>(null);
 
+  /**
+   * Name or category, the way the storefront search works — search_products_
+   * fuzzy (0008) scores the category name alongside the product name, so
+   * "bookmarks" finds every bookmark there too. Matching only the name meant
+   * the one search that gets used standing at a stall was the narrower of the
+   * two: you had to remember what a piece was called to find it.
+   *
+   * The slug is matched as well as the display name, with its hyphens opened
+   * out, so "worry stones" finds keychains-worry-stones.
+   */
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return products;
-    return products.filter((p) => p.name.toLowerCase().includes(q));
+    return products.filter((p) =>
+      [p.name, p.categoryName, p.categorySlug.replace(/-/g, " ")].some((field) =>
+        field.toLowerCase().includes(q),
+      ),
+    );
   }, [products, search]);
 
   const priceOf = (p: AdminProduct) => p.priceCents / 100;
@@ -41,7 +57,16 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
     });
 
   const itemCount = lines.reduce((n, l) => n + l.quantity, 0);
-  const totalRupees = lines.reduce((n, l) => n + l.quantity * l.priceRupees, 0);
+  const itemsRupees = lines.reduce((n, l) => n + l.quantity * l.priceRupees, 0);
+
+  // A blank box is 0, and so is anything unparseable — Number("") is 0 and
+  // Number("₹5") is NaN, neither of which should reach the total.
+  const parsedExtra = Number(extra);
+  const extraRupees =
+    Number.isFinite(parsedExtra) && parsedExtra > 0 ? parsedExtra : 0;
+
+  const totalRupees = itemsRupees + extraRupees;
+  const canSave = lines.length > 0 || extraRupees > 0;
 
   /**
    * Never lets the tally exceed what is in stock. Recording a sale of five when
@@ -72,12 +97,13 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
   function save() {
     setError(null);
     startTransition(async () => {
-      const result = await recordOfflineSale(lines, soldOn);
+      const result = await recordOfflineSale(lines, soldOn, extraRupees);
       if (!result.ok) {
         setError(result.error);
         return;
       }
       setQty({});
+      setExtra("");
       setSaved(true);
       router.refresh(); // pull fresh stock counts
     });
@@ -100,11 +126,39 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search pieces…"
-          aria-label="Search pieces"
+          placeholder="Search by piece or category…"
+          aria-label="Search by piece or category"
           className="flex-1 min-w-48 rounded-2xl border-2 border-outline-variant bg-white px-4 py-2 text-body-md focus:border-primary focus:outline-none"
         />
+
+        {/* Money taken for things the shop doesn't list. Sits with the other
+            controls rather than in the total bar: it is something you set once
+            at the end of a market, not per tap. */}
+        <label className="flex items-center gap-2 rounded-2xl border-2 border-outline-variant bg-white px-3 py-2 focus-within:border-primary">
+          <span className="text-body-md text-on-surface-variant whitespace-nowrap">
+            Extra ₹
+          </span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="1"
+            value={extra}
+            onChange={(e) => {
+              setSaved(false);
+              setExtra(e.target.value);
+            }}
+            placeholder="0"
+            aria-label="Extra amount in rupees, for anything sold that isn't listed"
+            className="w-20 bg-transparent text-body-md text-on-surface focus:outline-none"
+          />
+        </label>
       </div>
+
+      <p className="text-[12px] text-on-surface-variant mb-4 -mt-2">
+        Extra covers anything sold that isn&rsquo;t listed here. It joins the
+        day&rsquo;s takings; no stock comes down for it.
+      </p>
 
       {/* Bottom padding clears the fixed total bar. */}
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 pb-40">
@@ -199,6 +253,12 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
               <>
                 <p className="text-[13px] text-on-surface-variant leading-none">
                   {itemCount} {itemCount === 1 ? "item" : "items"}
+                  {extraRupees > 0 && (
+                    <>
+                      {" · "}
+                      {formatPrice(Math.round(extraRupees * 100))} extra
+                    </>
+                  )}
                 </p>
                 <p className="font-headline-md text-headline-md text-primary leading-tight">
                   {formatPrice(Math.round(totalRupees * 100))}
@@ -209,7 +269,7 @@ export function OfflineSaleForm({ products }: { products: AdminProduct[] }) {
           <button
             type="button"
             onClick={save}
-            disabled={pending || lines.length === 0}
+            disabled={pending || !canSave}
             className="tactile-button rounded-2xl bg-primary text-on-primary font-headline-md px-6 py-3 text-body-lg disabled:opacity-50"
           >
             {pending ? "Saving…" : "Save sale"}

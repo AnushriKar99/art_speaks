@@ -62,6 +62,14 @@ Last updated 2026-08-18.
   have neither photos nor pieces yet. `seed_categories.sql` carries the same
   numbers for the original eight and has to — migrations all run before the
   seeds in `setup_new_project.sql`.
+- **Offline sales take an extra amount.** `0021` adds `orders.extra_cents` for
+  money taken at a stall for things the shop doesn't list. Recorded as an
+  amount, never as a line item — same reasoning as `sales_history`: a line item
+  asserts a piece, price and quantity nobody wrote down. So it counts as
+  revenue (which sums `total_cents`) but not as pieces sold (which reads
+  `order_items`). The tap-grid search now matches category as well as name,
+  the way the storefront's does.
+
 ## Verify (blocked on dashboard access)
 
 - [ ] **Confirm `0004` applied.** Column grants aren't visible through the anon
