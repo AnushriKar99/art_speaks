@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductImage } from "@/components/ui/product-image";
 import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
@@ -34,6 +34,44 @@ function ProductModalContent({
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  const imageCount = product.images.length;
+  const hasMany = imageCount > 1;
+
+  /**
+   * The photo strip is a real horizontal scroller, so a thumb-swipe and a
+   * trackpad both move it natively and it lands on a photo rather than
+   * halfway between two.
+   *
+   * It used to be one <img> swapped by a row of dots — which worked, but only
+   * if you spotted the dots, and they were 12px of translucent pink sitting on
+   * the photograph itself. On a pale shot the inactive one was invisible, so a
+   * second photo may as well not have existed.
+   *
+   * activeImage is now derived from scroll position rather than driving the
+   * image, so it stays honest however the strip was moved: swiped, arrowed,
+   * or clicked.
+   */
+  const goTo = useCallback(
+    (i: number) => {
+      const el = trackRef.current;
+      if (!el) return;
+      const next = Math.max(0, Math.min(imageCount - 1, i));
+      el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+      // Set it here too: smooth scrolling means onScroll would otherwise lag
+      // the dot behind the tap that moved it.
+      setActiveImage(next);
+    },
+    [imageCount],
+  );
+
+  const onTrackScroll = () => {
+    const el = trackRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    setActiveImage((prev) => (prev === i ? prev : i));
+  };
 
   // Escape, body scroll lock, and the focus handling a dialog needs.
   //
@@ -82,6 +120,20 @@ function ProductModalContent({
     };
   }, [onClose]);
 
+  // Left/right through the photos. Its own listener rather than another branch
+  // in the one above, which owns the scroll lock and focus return — those must
+  // not re-run just because the gallery changed.
+  useEffect(() => {
+    if (!hasMany) return;
+    const onArrow = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      goTo(activeImage + (e.key === "ArrowRight" ? 1 : -1));
+    };
+    document.addEventListener("keydown", onArrow);
+    return () => document.removeEventListener("keydown", onArrow);
+  }, [hasMany, activeImage, goTo]);
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6">
       <div
@@ -119,25 +171,78 @@ function ProductModalContent({
               somebody's work. Contain shows every photo whole and lets the
               neutral panel take up the slack. */}
           <div className="relative aspect-square sm:aspect-[4/3] md:aspect-auto md:w-1/2 md:shrink-0 bg-surface-container-high overflow-hidden">
-            <ProductImage
-              src={product.images[activeImage]}
-              alt={product.name}
-              sizes="(min-width: 768px) 28rem, 100vw"
-              className="object-contain"
-            />
-            {product.images.length > 1 ? (
-              <div className="absolute bottom-3 left-0 w-full flex justify-center gap-2">
-                {product.images.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImage(i)}
-                    className={`w-3 h-3 rounded-full transition-colors ${
-                      i === activeImage ? "bg-primary" : "bg-primary/30"
-                    }`}
-                    aria-label={`View image ${i + 1}`}
+            <div
+              ref={trackRef}
+              onScroll={onTrackScroll}
+              className="absolute inset-0 flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory hide-scrollbar"
+            >
+              {/* A product with no photo still needs one slide, or the strip
+                  collapses and the 🥺 stand-in never renders. */}
+              {(imageCount ? product.images : [undefined]).map((src, i) => (
+                <div
+                  key={i}
+                  className="relative w-full h-full shrink-0 snap-center"
+                >
+                  <ProductImage
+                    src={src}
+                    alt={
+                      hasMany
+                        ? `${product.name} — photo ${i + 1} of ${imageCount}`
+                        : product.name
+                    }
+                    sizes="(min-width: 768px) 28rem, 100vw"
+                    className="object-contain"
                   />
+                </div>
+              ))}
+            </div>
+
+            {/* Arrows, because a swipe is invisible until you try it and a
+                mouse has no sideways scroll. They fade out at each end rather
+                than greying, so the one that remains is unambiguous. */}
+            {hasMany ? (
+              <>
+                {(
+                  [
+                    ["Previous", -1, "left-2", "chevron_left", activeImage === 0],
+                    ["Next", 1, "right-2", "chevron_right", activeImage === imageCount - 1],
+                  ] as const
+                ).map(([label, step, side, icon, atEnd]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => goTo(activeImage + step)}
+                    disabled={atEnd}
+                    aria-label={`${label} image`}
+                    className={`absolute ${side} top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-surface-bright/90 backdrop-blur-sm border-2 border-primary/25 shadow-md text-primary flex items-center justify-center transition-opacity hover:bg-surface-bright disabled:opacity-0 disabled:pointer-events-none`}
+                  >
+                    <Icon name={icon} className="text-[22px]" />
+                  </button>
                 ))}
-              </div>
+
+                {/* On a pill, not bare on the photograph — the old dots sat
+                    straight on the image and vanished over a pale one. */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-surface-bright/90 backdrop-blur-sm border-2 border-primary/25 shadow-md px-3 py-1.5">
+                  {product.images.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => goTo(i)}
+                      aria-label={`View image ${i + 1}`}
+                      aria-current={i === activeImage}
+                      // Negative margin keeps the dots visually 8px apart
+                      // while giving each a thumb-sized target.
+                      className="p-1 -m-1"
+                    >
+                      <span
+                        className={`block w-2.5 h-2.5 rounded-full transition-colors ${
+                          i === activeImage ? "bg-primary" : "bg-primary/35"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </>
             ) : null}
           </div>
 
