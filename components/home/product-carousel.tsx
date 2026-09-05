@@ -9,6 +9,7 @@ import { Icon } from "@/components/ui/icon";
 import { BadgeSticker } from "@/components/ui/badge-sticker";
 import { ProductModal } from "@/components/product/product-modal";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import { SoldOutOverlay } from "@/components/product/sold-out-overlay";
 import { WishlistHeart } from "@/components/product/wishlist-heart";
 
 type Variant = "bestseller" | "arrival";
@@ -145,6 +146,7 @@ function BestSellerCard({
           sizes="260px"
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
+        <SoldOutOverlay stockCount={product.stockCount} />
         <WishlistHeart
           productId={product.id}
           productName={product.name}
@@ -197,6 +199,7 @@ function ArrivalCard({
           sizes="220px"
           className="object-cover transition-transform duration-700 group-hover:scale-105"
         />
+        <SoldOutOverlay stockCount={product.stockCount} />
         <WishlistHeart
           productId={product.id}
           productName={product.name}

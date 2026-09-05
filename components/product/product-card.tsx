@@ -5,6 +5,7 @@ import type { Product } from "@/lib/types";
 import { formatPrice } from "@/lib/types";
 import { WishlistHeart } from "@/components/product/wishlist-heart";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import { SoldOutOverlay } from "@/components/product/sold-out-overlay";
 
 export function ProductCard({
   product,
@@ -33,6 +34,7 @@ export function ProductCard({
           sizes="(min-width: 768px) 33vw, 50vw"
           className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
+        <SoldOutOverlay stockCount={product.stockCount} />
         <AddToCartButton
           productId={product.id}
           productName={product.name}
