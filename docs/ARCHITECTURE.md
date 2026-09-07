@@ -314,6 +314,12 @@ via a different function (`record_offline_sale`, `0009`) that deducts stock in
 the same transaction as the insert — same underlying trigger machinery, one
 insert instead of a status change.
 
+Those rows never reach `/admin/orders`: `getAdminOrders` filters
+`channel <> 'offline'`. A sale taken in person has no customer, no address and
+no next step — the money is in the tin before the row exists — so it has
+nothing for a status queue to manage. It still counts as revenue, because
+`monthly_sales` reads the same table and does not care which page shows it.
+
 ---
 
 ## 5. Admin panel
