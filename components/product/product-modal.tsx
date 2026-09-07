@@ -31,7 +31,13 @@ function ProductModalContent({
   onClose: () => void;
 }) {
   const { add } = useCart();
-  const [qty, setQty] = useState(1);
+  // The stepper used to open at 1 whatever the stock was, so a sold-out piece
+  // showed "1" beside a badge saying Sold out — and the Add to Cart button
+  // beside it still worked, putting something that does not exist into the
+  // basket. With none left the whole action row switches off and the count
+  // starts where it honestly is.
+  const soldOut = product.stockCount <= 0;
+  const [qty, setQty] = useState(soldOut ? 0 : 1);
   const [activeImage, setActiveImage] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -306,9 +312,17 @@ function ProductModalContent({
             the image column so they stay under the details they belong to
             rather than stretching across the photo as well. */}
         <div className="shrink-0 bg-surface-bright/95 backdrop-blur-md p-4 md:pl-[calc(50%+0.5rem)] border-t-2 border-primary-container flex items-center gap-3">
-          <div className="flex items-center border-2 border-primary rounded-xl overflow-hidden shrink-0">
+          <div
+            className={`flex items-center border-2 rounded-xl overflow-hidden shrink-0 ${
+              soldOut
+                ? "border-outline-variant text-outline"
+                : "border-primary"
+            }`}
+          >
             <button
-              className="px-3 py-2 hover:bg-primary-container transition-colors"
+              type="button"
+              disabled={soldOut || qty <= 1}
+              className="px-3 py-2 hover:bg-primary-container transition-colors disabled:hover:bg-transparent disabled:text-outline-variant disabled:cursor-not-allowed"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               aria-label="Decrease quantity"
             >
@@ -316,7 +330,11 @@ function ProductModalContent({
             </button>
             <span className="px-3 font-bold">{qty}</span>
             <button
-              className="px-3 py-2 hover:bg-primary-container transition-colors"
+              type="button"
+              // The cap was already here; what it lacked was a disabled state,
+              // so at the limit the + looked pressable and did nothing.
+              disabled={soldOut || qty >= product.stockCount}
+              className="px-3 py-2 hover:bg-primary-container transition-colors disabled:hover:bg-transparent disabled:text-outline-variant disabled:cursor-not-allowed"
               onClick={() => setQty((q) => Math.min(product.stockCount, q + 1))}
               aria-label="Increase quantity"
             >
@@ -324,14 +342,20 @@ function ProductModalContent({
             </button>
           </div>
           <button
+            type="button"
+            disabled={soldOut}
             onClick={() => {
               add(product.id, qty);
               onClose();
             }}
-            className="flex-1 bg-candy-pink text-primary font-display-lg-mobile text-[18px] py-3 rounded-xl shadow-[4px_4px_0px_#864d61] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-2"
+            className={`flex-1 font-display-lg-mobile text-[18px] py-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+              soldOut
+                ? "bg-surface-container-high text-outline border-2 border-outline-variant cursor-not-allowed"
+                : "bg-candy-pink text-primary shadow-[4px_4px_0px_#864d61] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:scale-95"
+            }`}
           >
-            <Icon name="shopping_cart" />
-            Add to Cart
+            <Icon name={soldOut ? "remove_shopping_cart" : "shopping_cart"} />
+            {soldOut ? "Sold out" : "Add to Cart"}
           </button>
           <WishlistButton
             productId={product.id}

@@ -14,6 +14,11 @@ import { Icon } from "@/components/ui/icon";
  * Stops at the stock count: the checkout function refuses an order for more
  * than exists, so letting the button climb past it would only produce an error
  * later, at the point where it is most annoying.
+ *
+ * With none left it is not a cart control at all, but a "Sold out" marker. That
+ * is checked before the basket, so a piece that sold out *after* it was added
+ * cannot be topped up from the card either — the basket page is where such a
+ * line gets removed, and it says so.
  */
 export function AddToCartButton({
   productId,
@@ -31,24 +36,44 @@ export function AddToCartButton({
 }) {
   const { lines, add, setQuantity } = useCart();
   const quantity = lines.find((l) => l.productId === productId)?.quantity ?? 0;
+  // <= rather than ===: nothing should write a negative stock count, but if
+  // something ever did, "sold out" is the honest reading of it.
+  const soldOut = stockCount <= 0;
 
   const shell =
     "bg-white rounded-full flex items-center justify-center text-primary shadow-[4px_4px_0px_#864d61] transition-all z-10";
 
-  if (quantity === 0) {
-    const soldOut = stockCount === 0;
+  if (soldOut) {
+    // Says it in words rather than fading the cart icon. A faded icon is how
+    // this looked before, and a disabled control that still resembles the
+    // enabled one reads as a rendering glitch — so people tapped it, and the
+    // card gave no reason why nothing happened. The offset shadow is dropped
+    // too: nothing here is pressable, so nothing should look raised.
     return (
       <button
         type="button"
-        disabled={soldOut}
+        disabled
+        aria-label={`${productName} is sold out`}
+        className={`bg-surface-container-high/95 backdrop-blur-sm border-2 border-outline-variant rounded-full flex items-center justify-center gap-1 h-10 px-3 text-outline cursor-not-allowed z-10 ${className}`}
+      >
+        <Icon name="remove_shopping_cart" className="text-[18px]" />
+        <span className="font-label-caps text-[11px] uppercase tracking-wide">
+          Sold out
+        </span>
+      </button>
+    );
+  }
+
+  if (quantity === 0) {
+    return (
+      <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           add(productId);
         }}
-        aria-label={soldOut ? `${productName} is sold out` : `Add ${productName} to cart`}
-        className={`${shell} ${size} ${className} ${
-          soldOut ? "opacity-50 cursor-not-allowed" : "hover:translate-y-[-2px]"
-        }`}
+        aria-label={`Add ${productName} to cart`}
+        className={`${shell} ${size} ${className} hover:translate-y-[-2px]`}
       >
         <Icon name="add_shopping_cart" className="text-[20px]" />
       </button>
