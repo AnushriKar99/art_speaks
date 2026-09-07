@@ -153,8 +153,25 @@ type OrderRow = {
 };
 
 /**
- * Every order, newest first, with its line items and each product's current
- * stock. Uses the admin's session, so the RLS policies from 0003 authorise it.
+ * Every order the shop took, newest first, with its line items and each
+ * product's current stock. Uses the admin's session, so the RLS policies from
+ * 0003 authorise it.
+ *
+ * In-person sales are excluded. They are rows in `orders` for one reason —
+ * that is where the stock trigger and the revenue views already look — but
+ * they are not orders in any sense this page serves: no customer, no address,
+ * no next step, written straight to paid and handed over before the row
+ * existed. On a market week they were most of the list, pushing the orders
+ * that did need doing off the screen, and each one offered "Mark shipped" for
+ * a piece already in somebody's bag.
+ *
+ * Filtered by what offline *is*, not by naming the channels that stay: the
+ * column's default from 0006 is 'online', so anything that arrives through a
+ * future payment flow lands here needing fulfilment rather than being hidden
+ * by a whitelist nobody remembered to update.
+ *
+ * They still count everywhere money is counted — monthly_sales reads the same
+ * table, so the Sales page is unchanged.
  */
 export async function getAdminOrders(): Promise<AdminOrder[]> {
   const supabase = await createClient();
@@ -163,6 +180,7 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
     .select(
       "id, order_number, channel, status, contact_phone, contact_email, shipping_address, total_cents, extra_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, prepared, products(stock_count))",
     )
+    .neq("channel", "offline")
     .order("created_at", { ascending: false });
 
   unwrap("getAdminOrders", { data, error });

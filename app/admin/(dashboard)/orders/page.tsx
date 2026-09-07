@@ -15,9 +15,10 @@ export const metadata = { title: "Art Speaks | Orders" };
  * a subset of it, kept separate because it is the one status that needs the
  * studio to do something. Cancelled is the opposite: a record, not work.
  *
- * All is the default so the page still shows everything to someone who has not
- * noticed the filter — a delivered order silently missing would read as data
- * loss rather than a view.
+ * All is the default so the page still shows every order it has to someone who
+ * has not noticed the filter — a delivered order silently missing would read as
+ * data loss rather than a view. ("Every order it has" is the shop's own; the
+ * in-person sales never reach this page — see getAdminOrders.)
  */
 const FILTERS = [
   {
@@ -176,9 +177,21 @@ async function OrderList({ active }: { active: FilterKey }) {
 
   return (
     <>
-      <p className="text-body-md text-on-surface-variant mb-4">
+      <p className="text-body-md text-on-surface-variant mb-1">
         {orders.length} {orders.length === 1 ? "order" : "orders"}
         {counts.pending > 0 ? ` · ${counts.pending} waiting on you` : ""}
+      </p>
+
+      {/* Says where the in-person sales went, so their absence reads as a
+          decision rather than as a missing row. The same worry as the "All"
+          filter below: on this page, silence looks like data loss. */}
+      <p className="text-[13px] text-on-surface-variant mb-4">
+        Orders placed through the shop. An in-person sale is not one of these —
+        it is taken and paid before it is recorded, so it counts under{" "}
+        <Link href="/admin/sales" className="text-primary hover:underline">
+          Sales
+        </Link>{" "}
+        instead.
       </p>
 
       <nav aria-label="Filter orders" className="flex flex-wrap gap-2 mb-6">
