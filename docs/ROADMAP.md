@@ -4,7 +4,7 @@ Living backlog. The phase design lives in
 [`superpowers/specs/2026-07-31-admin-panel-design.md`](superpowers/specs/2026-07-31-admin-panel-design.md);
 this file tracks everything, including work outside those phases.
 
-Last updated 2026-08-18.
+Last updated 2026-09-07.
 
 ---
 
@@ -56,6 +56,10 @@ Last updated 2026-08-18.
   traded before the shop existed (₹40,820), and `sales_by_month` unions it with
   the live figures. Deliberately not written as `orders` rows: that would have
   deducted stock for pieces long gone and invented line items nobody recorded.
+  `0022` adds August 2026 (₹9,530 offline + ₹2,420 online), taking the
+  hand-entered total to ₹52,770. August is the first month that straddles
+  launch, and was confirmed as having nothing recorded through the shop — so
+  nothing is double-counted, and no offline sale should be back-dated into it.
 
 - **Two more categories.** `0019` adds Trinkets and Others; `0020` states the
   full running order and puts Trinkets ahead of Tote Bags and Stickers, which

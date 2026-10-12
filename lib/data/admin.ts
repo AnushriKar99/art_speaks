@@ -119,6 +119,8 @@ export interface AdminOrder {
   contactPhone: string | null;
   contactEmail: string | null;
   address: Record<string, string> | null;
+  subtotalCents: number;
+  shippingCents: number;
   totalCents: number;
   /** Part of the total taken for unlisted goods (0021); 0 for every online order. */
   extraCents: number;
@@ -136,6 +138,8 @@ type OrderRow = {
   contact_phone: string | null;
   contact_email: string | null;
   shipping_address: Record<string, string> | null;
+  subtotal_cents: number;
+  shipping_cents: number;
   total_cents: number;
   extra_cents: number;
   currency: string;
@@ -178,7 +182,7 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, total_cents, extra_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, prepared, products(stock_count))",
+      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, subtotal_cents, shipping_cents, total_cents, extra_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, prepared, products(stock_count))",
     )
     .neq("channel", "offline")
     .order("created_at", { ascending: false });
@@ -195,6 +199,8 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
     contactPhone: o.contact_phone,
     contactEmail: o.contact_email,
     address: o.shipping_address,
+    subtotalCents: o.subtotal_cents ?? 0,
+    shippingCents: o.shipping_cents ?? 0,
     totalCents: o.total_cents,
     extraCents: o.extra_cents,
     currency: o.currency,
