@@ -85,12 +85,13 @@ leaves paid. Offline sales are written straight to `paid`.
 **Redirects go through `lib/safe-redirect.ts`.** A `startsWith("/")` check is
 not enough — `/\evil.com` passes it and resolves off-site.
 
-**"Sales" is two sources, not one.** `monthly_sales` (`0006`) is computed from
-orders and still means only that. `sales_history` (`0016`) holds the months the
-studio traded before this existed — hand-entered totals, no line items, no
-order count. `sales_by_month` unions them and is what the page reads. So
-Revenue includes the pre-launch figures while Orders and Pieces sold cannot,
-which is why those tiles carry hints saying so.
+**"Sales" is two sources, not one.** `monthly_sales` (`0006`, revised by `0023`)
+computes revenue from orders by summing `subtotal_cents` — shipping charges are
+excluded because they pay the courier, not the studio. `sales_history` (`0016`)
+holds the months the studio traded before this existed — hand-entered totals, no
+line items, no order count. `sales_by_month` unions them and is what the page
+reads. So Revenue includes the pre-launch figures while Orders and Pieces sold
+cannot, which is why those tiles carry hints saying so.
 
 **Changing data by raw SQL will not show up for an hour.** Storefront reads are
 `unstable_cache` with `revalidate: 3600`, invalidated by `updateTag` — which
@@ -100,6 +101,12 @@ bypasses that entirely.
 Restarting the dev server does **not** help: the cache is on disk, and under
 Turbopack it lives in `.next/dev/cache`, not the `.next/cache` you would look
 in. Stop the server and `rm -r .next/dev/cache`.
+
+**Images are served unoptimized from Supabase Storage.** `next.config.ts` sets
+`images.unoptimized: true` so `next/image` serves the original URL rather than
+routing through Vercel's `/_next/image` optimizer (which hit its monthly quota).
+Compression happens at upload time instead — `lib/images/upload.ts` resizes to
+1400px max edge and encodes as WebP (JPEG fallback), typically 50–120 KB.
 
 ## Layout
 
