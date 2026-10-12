@@ -1,28 +1,11 @@
 import Link from "next/link";
 import { getAdminProducts } from "@/lib/data/admin";
-import { formatPrice } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
+import { InventoryTable } from "@/components/admin/inventory-table";
 
 export const metadata = { title: "Art Speaks | Inventory" };
 
-/** Below this, a piece is nearly gone — matches the low_stock view in 0006. */
 const LOW_STOCK = 3;
-
-function StockPill({ count }: { count: number }) {
-  const tone =
-    count === 0
-      ? "bg-error-container text-on-error-container"
-      : count <= LOW_STOCK
-        ? "bg-lemon-yellow text-on-tertiary-container"
-        : "bg-secondary-container text-on-secondary-container";
-  return (
-    <span
-      className={`inline-flex items-center justify-center min-w-9 px-2 py-0.5 rounded-full text-body-md font-semibold ${tone}`}
-    >
-      {count}
-    </span>
-  );
-}
 
 export default async function InventoryPage() {
   const products = await getAdminProducts();
@@ -82,97 +65,7 @@ export default async function InventoryPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-[2rem] border-2 border-candy-pink/30 bg-surface-container-lowest overflow-hidden">
-          {/* A wide table scrolls inside its own box, never the page. */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[46rem]">
-              <thead>
-                <tr className="bg-surface-container-high text-on-surface-variant">
-                  <th className="font-label-caps text-label-caps uppercase tracking-wide px-4 py-3">
-                    Piece
-                  </th>
-                  <th className="font-label-caps text-label-caps uppercase tracking-wide px-4 py-3">
-                    Category
-                  </th>
-                  <th className="font-label-caps text-label-caps uppercase tracking-wide px-4 py-3 text-right">
-                    Price
-                  </th>
-                  <th className="font-label-caps text-label-caps uppercase tracking-wide px-4 py-3 text-center">
-                    Stock
-                  </th>
-                  <th className="font-label-caps text-label-caps uppercase tracking-wide px-4 py-3">
-                    Shows as
-                  </th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-t border-outline-variant/60 hover:bg-surface-container-low transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <span className="text-body-md text-on-surface">
-                        {p.name}
-                      </span>
-                      {p.images.length === 0 && (
-                        <span
-                          className="ml-2 text-body-md"
-                          title="No photo yet — shows a placeholder in the shop"
-                        >
-                          🥺
-                        </span>
-                      )}
-                      <span className="block text-[13px] text-on-surface-variant">
-                        {p.slug}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-body-md text-on-surface-variant">
-                      {p.categorySlug || (
-                        <span className="text-error">uncategorised</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-body-md text-on-surface text-right whitespace-nowrap">
-                      {formatPrice(p.priceCents, p.currency)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <StockPill count={p.stockCount} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        {!p.isActive && (
-                          <span className="rounded-full bg-surface-container-high text-on-surface-variant px-2 py-0.5 text-[12px]">
-                            Hidden
-                          </span>
-                        )}
-                        {p.isBestSeller && (
-                          <span className="rounded-full bg-primary-container text-on-primary-container px-2 py-0.5 text-[12px]">
-                            Featured
-                          </span>
-                        )}
-                        {p.isNewArrival && (
-                          <span className="rounded-full bg-secondary-container text-on-secondary-container px-2 py-0.5 text-[12px]">
-                            New
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/inventory/${p.slug}`}
-                        className="inline-flex items-center gap-1 text-primary font-label-caps text-label-caps uppercase tracking-wider hover:underline"
-                      >
-                        Edit
-                        <Icon name="chevron_right" className="text-[18px]" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <InventoryTable products={products} />
       )}
     </>
   );

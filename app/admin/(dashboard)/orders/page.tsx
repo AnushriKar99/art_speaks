@@ -334,6 +334,18 @@ async function OrderList({ active }: { active: FilterKey }) {
                       </span>
                     </li>
                   )}
+
+                  {o.shippingCents > 0 && (
+                    <li className="flex items-center gap-3 text-body-md">
+                      <span className="w-6 h-6 shrink-0" aria-hidden />
+                      <span className="flex-1 text-on-surface-variant italic">
+                        Shipping
+                      </span>
+                      <span className="text-on-surface-variant whitespace-nowrap">
+                        {formatPrice(o.shippingCents, o.currency)}
+                      </span>
+                    </li>
+                  )}
                 </ul>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/60 pt-3">

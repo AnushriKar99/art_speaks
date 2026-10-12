@@ -4,7 +4,7 @@ How the whole app fits together: request → render, click → order, sign up �
 session. Written for someone who knows the codebase exists but hasn't traced
 the wiring yet.
 
-Last updated 2026-08-19. If a diagram here disagrees with the code, trust the
+Last updated 2026-10-13. If a diagram here disagrees with the code, trust the
 code and fix this file — a stale architecture doc is worse than none, because
 it's trusted (see the note at the top of `CLAUDE.md`).
 
@@ -28,7 +28,7 @@ flowchart TB
     subgraph Supabase["Supabase — ap-south-1 (Mumbai)"]
         Auth["Auth\n(users, JWT)"]
         DB[("Postgres\n+ RLS policies")]
-        Storage["Storage\n(product-images bucket)"]
+        Storage["Storage\n(product-images bucket)\nimages served directly, not via Vercel optimizer"]
     end
 
     Visitor -->|GET| Proxy
@@ -249,6 +249,14 @@ session, a category image and a CSS rule.)
 artisan note, slug and category, with `pg_trgm` similarity as a typo-tolerant
 fallback (migration `0008`) — so "erasor" still finds "eraser".
 
+**Images are served directly from Supabase Storage**, not through Vercel's image
+optimization proxy (`images.unoptimized: true` in `next.config.ts`). This avoids
+hitting Vercel's monthly image optimization quota. Instead, images are compressed
+at upload time in `lib/images/upload.ts`: the browser resizes to max 1400px edge
+and converts to WebP (with JPEG fallback), producing ~50–120 KB files. This
+replaces the earlier approach where raw uploads were sent through Vercel's
+`/_next/image` proxy, which was quota-limited.
+
 ---
 
 ## 4. Cart → Checkout → Order
@@ -319,6 +327,8 @@ Those rows never reach `/admin/orders`: `getAdminOrders` filters
 no next step — the money is in the tin before the row exists — so it has
 nothing for a status queue to manage. It still counts as revenue, because
 `monthly_sales` reads the same table and does not care which page shows it.
+The orders page notes this with a line under the count explaining where
+offline sales appear (under Sales).
 
 ---
 
@@ -328,13 +338,14 @@ nothing for a status queue to manage. It still counts as revenue, because
 flowchart TB
     Login["/login\n(same page as customers)"] -->|is_admin claim| Guard["(dashboard)/layout.tsx\nrequireAdmin()"]
     Guard --> Dash["/admin — 4 links out"]
-    Dash --> Inv["/admin/inventory\nproducts CRUD"]
+    Dash --> Inv["/admin/inventory\nproducts CRUD\nsearch + live/hidden filter"]
     Dash --> SaleNew["/admin/sales/new\noffline sale tap-grid"]
     Dash --> Sales["/admin/sales\nrevenue charts"]
-    Dash --> Orders["/admin/orders\nstatus management"]
+    Dash --> Orders["/admin/orders\nstatus management\n(offline sales excluded)"]
 
     Orders -->|Suspense boundary| OrderList["<OrderList>\nfilter: All/Live/Pending/Cancelled"]
     Orders -->|client component| Actions["<OrderActions>\nuseTransition + confirm dialog"]
+    Inv -->|client component| InvTable["<InventoryTable>\ntext search + status filter"]
 ```
 
 There is **one** login page for the entire site — `is_admin` is a flag on a
@@ -356,23 +367,26 @@ the one action with no way back — is the only one that asks for confirmation.
 ```mermaid
 flowchart LR
     subgraph Live["Computed live, forever"]
-        Orders[("orders + order_items")] --> MS["monthly_sales\n(view, 0006)"]
+        Orders[("orders + order_items")] --> MS["monthly_sales\n(view, 0006/0023)\nsums subtotal_cents"]
     end
-    subgraph Frozen["Hand-entered, six months, done once"]
-        SH[("sales_history\n(table, 0016)\n₹40,820, Feb–Jul 2026")]
+    subgraph Frozen["Hand-entered, done once per month"]
+        SH[("sales_history\n(table, 0016)\n₹52,770, Feb–Aug 2026")]
     end
     MS --> SBM["sales_by_month\n(view, 0016 — UNION of both)"]
     SH --> SBM
     SBM --> SalesPage["/admin/sales"]
 ```
 
-`monthly_sales` is untouched by any of this and still means exactly what it
-always meant: revenue computed from real orders. `sales_history` covers the
-months before the shop existed as software — a monthly total with **no** line
-items, because that's genuinely all that's known about that period. Writing
-it as fake `orders` rows was tried and reverted: it would have deducted stock
-for pieces that left the studio months ago, and invented a product breakdown
-nobody actually recorded.
+`monthly_sales` computes revenue from real orders. As of `0023`, it sums
+`subtotal_cents` instead of `total_cents` — shipping charges are collected to
+pay the courier, not studio revenue, so they are excluded from the chart.
+
+`sales_history` covers the months before the shop existed as software — a
+monthly total with **no** line items, because that's genuinely all that's known
+about that period. Writing it as fake `orders` rows was tried and reverted: it
+would have deducted stock for pieces that left the studio months ago, and
+invented a product breakdown nobody actually recorded. `0022` added August 2026
+(₹9,530 offline + ₹2,420 online), bringing the hand-entered total to ₹52,770.
 
 The seam shows up in the admin UI on purpose: historical months report
 `order_count: 0` (how many transactions made up that total is unknown, and

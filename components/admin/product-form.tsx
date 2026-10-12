@@ -236,8 +236,8 @@ export function ProductForm({
           />
         </label>
         <p className="text-[13px] text-on-surface-variant mt-2">
-          Resized to 1600px before uploading, so a 4 MB phone photo becomes a
-          few hundred KB. The first photo is the one shown on cards.
+          Compressed to lightweight WebP before uploading, so phone photos load
+          instantly without slowing down the shop. The first photo is the one shown on cards.
         </p>
         {uploadError && (
           <p className="text-body-md text-error mt-2" role="alert">

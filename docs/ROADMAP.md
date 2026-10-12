@@ -4,7 +4,7 @@ Living backlog. The phase design lives in
 [`superpowers/specs/2026-07-31-admin-panel-design.md`](superpowers/specs/2026-07-31-admin-panel-design.md);
 this file tracks everything, including work outside those phases.
 
-Last updated 2026-08-18.
+Last updated 2026-10-13.
 
 ---
 
@@ -56,6 +56,10 @@ Last updated 2026-08-18.
   traded before the shop existed (₹40,820), and `sales_by_month` unions it with
   the live figures. Deliberately not written as `orders` rows: that would have
   deducted stock for pieces long gone and invented line items nobody recorded.
+  `0022` adds August 2026 (₹9,530 offline + ₹2,420 online), taking the
+  hand-entered total to ₹52,770. August is the first month that straddles
+  launch, and was confirmed as having nothing recorded through the shop — so
+  nothing is double-counted, and no offline sale should be back-dated into it.
 
 - **Two more categories.** `0019` adds Trinkets and Others; `0020` states the
   full running order and puts Trinkets ahead of Tote Bags and Stickers, which
@@ -69,6 +73,25 @@ Last updated 2026-08-18.
   revenue (which sums `total_cents`) but not as pieces sold (which reads
   `order_items`). The tap-grid search now matches category as well as name,
   the way the storefront's does.
+- **Offline sales hidden from the orders queue.** `getAdminOrders` now filters
+  `channel <> 'offline'`. Offline sales had no customer, no address, and no
+  next step — they cluttered the status queue without needing anything done.
+  They still count as revenue through `monthly_sales`. The orders page explains
+  where they went.
+- **Sold-out overlay and guard.** Cards now say "Sold out" visually (not only
+  to screen readers), and the Add to Cart button is disabled for `stock_count: 0`
+  products.
+- **Revenue excludes shipping.** `0023` changes `monthly_sales` to sum
+  `subtotal_cents` instead of `total_cents`. Shipping charges pay the courier,
+  not the studio — they were inflating revenue by ₹80 per online/WhatsApp order.
+- **Inventory search and filter.** The inventory page now has a live text search
+  (product name, category, or slug) and a status filter (All / Live / Hidden)
+  via a new `<InventoryTable>` client component.
+- **Image optimization bypass.** `next.config.ts` sets `images.unoptimized: true`
+  to avoid hitting Vercel's monthly image optimization quota. Instead,
+  `lib/images/upload.ts` compresses at upload time: resize to 1400px max edge,
+  WebP (with JPEG fallback), typically 50–120 KB. The legacy
+  `lh3.googleusercontent.com` remote pattern was also removed.
 
 ## Verify (blocked on dashboard access)
 
@@ -282,7 +305,7 @@ argument gets weaker once custom SMTP is set up.
 | ~~Custom order section image~~ | **Done** — a real studio flat-lay, served from `public/images/`. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
 | Sales test passes on a broken page | The test project has no `0016`, so `sales_by_month` is missing and `getSalesSummary` returns empty. The test accepts figures *or* "nothing sold yet" and cannot tell those apart from a failed query. Apply `0016` there **without** its `insert` block, and assert a known figure rather than either-or. The same blind spot means a missed migration on deploy would not error — the page would quietly claim nothing had sold. |
-| `next.config.ts` still allowlists `lh3.googleusercontent.com` | Left over from the Stitch export. Verified 2026-08-18: all 8 products use uploaded images and none reference that host, so the pattern can be dropped. |
+| ~~`next.config.ts` still allowlists `lh3.googleusercontent.com`~~ | **Done** — removed. All products use uploaded images; no references to that host remain. |
 
 ## Not doing (for now)
 
