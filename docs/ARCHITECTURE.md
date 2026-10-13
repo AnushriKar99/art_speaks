@@ -330,6 +330,13 @@ nothing for a status queue to manage. It still counts as revenue, because
 The orders page notes this with a line under the count explaining where
 offline sales appear (under Sales).
 
+**Sold-out pieces leave Fresh Arrivals automatically** (`0024`). A
+`BEFORE UPDATE` trigger on `products` clears `is_new_arrival` when
+`stock_count` reaches 0 — whether the sale came through WhatsApp, the offline
+tap-grid, or a manual stock edit. `getNewArrivals()` also filters
+`stock_count > 0` as a display-layer safeguard. Restocking does **not**
+restore the flag; it is for newly arrived designs and is toggled by the admin.
+
 ---
 
 ## 5. Admin panel

@@ -92,6 +92,12 @@ Last updated 2026-10-13.
   `lib/images/upload.ts` compresses at upload time: resize to 1400px max edge,
   WebP (with JPEG fallback), typically 50–120 KB. The legacy
   `lh3.googleusercontent.com` remote pattern was also removed.
+- **Sold-out pieces leave Fresh Arrivals automatically.** `0024` adds a
+  `BEFORE UPDATE` trigger on `products` that clears `is_new_arrival` when
+  `stock_count` reaches 0. The backfill in the same migration cleared the flag
+  on existing sold-out products. `getNewArrivals()` also filters
+  `stock_count > 0` as a display-layer safeguard. Restocking does **not**
+  restore the flag — it is for new designs and is toggled manually by the admin.
 
 ## Verify (blocked on dashboard access)
 
@@ -300,7 +306,7 @@ argument gets weaker once custom SMTP is set up.
 | Add-to-cart animation | The item should visibly fly into the basket when added, rather than only the header count changing. Purely presentational — the cart itself works. |
 | ~~Wishlist persistence~~ | **Done** — saves to the `wishlist` table, requires an account, RLS-enforced. Signed-out visitors get a sign-in prompt. |
 | ~~Storefront search~~ | **Done** — substring match across name, description, artisan note, slug and category, with pg_trgm typo tolerance as a fallback. |
-| Category images | 6 of 10 uploaded and linked. Still needed: **tote-bags, stickers, trinkets, others** — these show a tinted "Coming soon" tile until then. Resize the long edge to 800px to match the rest, upload into `product-images/categories/`, then link that one row. Do **not** run `link_category_images.sql` while any are missing: it sets every null row, and the card checks whether the URL is set rather than whether it loads, so the remaining ones become broken images. |
+| Category images | 8 of 10 uploaded and linked. Still needed: **stickers** — shows a tinted "Coming soon" tile until then. Trinkets was uploaded as `.jpeg` but `link_category_images.sql` wrote a `.jpg` URL — fix by updating the database row to `.jpeg` or re-uploading as `.jpg`. Tote-bags and others images are resized (800px) and ready to upload into `product-images/categories/`. Resize the long edge to 800px to match the rest, then link that one row. Do **not** run `link_category_images.sql` while any are missing: it sets every null row, and the card checks whether the URL is set rather than whether it loads, so the remaining ones become broken images. |
 | ~~Logo image~~ | **Done** — real logo, no Stitch hotlinks left anywhere. |
 | ~~Custom order section image~~ | **Done** — a real studio flat-lay, served from `public/images/`. |
 | Custom order form doesn't submit | Pre-fills a WhatsApp message; it cannot send. A Server Action would make it a real enquiry. |
