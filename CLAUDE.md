@@ -80,7 +80,10 @@ is no parameter through which a price could arrive.
 
 **Stock moves on confirmation, not on order.** An order is `pending` until
 marked paid; the trigger in `0010`/`0014` deducts then, and restores if it
-leaves paid. Offline sales are written straight to `paid`.
+leaves paid. Offline sales are written straight to `paid`. When stock reaches
+zero, a second trigger (`0024`) clears `is_new_arrival` so the piece drops out
+of the homepage's "Fresh out of the oven" section automatically. Restocking
+does not restore the flag — it is for new designs and the admin toggles it.
 
 **Redirects go through `lib/safe-redirect.ts`.** A `startsWith("/")` check is
 not enough — `/\evil.com` passes it and resolves off-site.

@@ -260,6 +260,7 @@ export const getNewArrivals = unstable_cache(
     .from("products")
     .select(PRODUCT_COLUMNS)
     .eq("is_new_arrival", true)
+    .gt("stock_count", 0)
     .order("created_at", { ascending: false });
 
   unwrap("getNewArrivals", { data, error });
