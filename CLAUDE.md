@@ -49,9 +49,7 @@ renaming would touch six columns plus the TypeScript types. Forms take rupees
 and convert; only the database sees paise.
 
 **Security lives in the database, not the UI.** RLS decides what a request may
-do; `requireAdmin()` and the middleware only decide what renders. See
-`docs/LEARNING-auth-and-backend.md` for the full picture — it is the best
-starting point for anyone new here.
+do; `requireAdmin()` and the middleware only decide what renders.
 
 **The admin check reads a JWT claim, not the database.** `0015` installs an
 auth hook that signs `is_admin` into the token, so `requireAdmin()` verifies it

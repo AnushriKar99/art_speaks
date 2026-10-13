@@ -1,8 +1,6 @@
 # Art Speaks — Roadmap
 
-Living backlog. The phase design lives in
-[`superpowers/specs/2026-07-31-admin-panel-design.md`](superpowers/specs/2026-07-31-admin-panel-design.md);
-this file tracks everything, including work outside those phases.
+Living backlog tracking progress, completed features, and work outside phased milestones.
 
 Last updated 2026-10-13.
 
