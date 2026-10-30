@@ -252,12 +252,31 @@ async function OrderList({ active }: { active: FilterKey }) {
                       {CHANNEL_LABEL[o.channel]}
                     </p>
                   </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-body-md capitalize ${STATUS_TONE[o.status]}`}
-                  >
-                    {o.status}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {o.status === "pending" && o.minutesRemaining > 0 && (
+                      <span className="rounded-full bg-lemon-yellow/50 border border-amber-300 text-amber-950 px-3 py-1 text-[13px] font-medium flex items-center gap-1">
+                        ⏳ {o.minutesRemaining}m reserved
+                      </span>
+                    )}
+                    {o.status === "pending" && o.isExpired && (
+                      <span className="rounded-full bg-stone-200 border border-stone-300 text-stone-800 px-3 py-1 text-[13px] font-medium flex items-center gap-1">
+                        ⚠️ Lock expired
+                      </span>
+                    )}
+                    <span
+                      className={`rounded-full px-3 py-1 text-body-md capitalize ${STATUS_TONE[o.status]}`}
+                    >
+                      {o.status}
+                    </span>
+                  </div>
                 </div>
+
+                {o.adminNotes && (
+                  <div className="bg-surface-container-low border border-outline-variant/60 rounded-xl px-3 py-2 text-[12px] text-on-surface-variant mb-3 flex items-start gap-1.5">
+                    <span className="text-sm">ℹ️</span>
+                    <span>{o.adminNotes}</span>
+                  </div>
+                )}
 
                 {(o.contactPhone || address || o.contactEmail) && (
                   <div className="text-body-md text-on-surface-variant mb-3 space-y-0.5">
