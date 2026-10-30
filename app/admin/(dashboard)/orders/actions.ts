@@ -128,3 +128,23 @@ export async function setItemPrepared(
   revalidatePath("/admin/orders");
   return { ok: true };
 }
+
+/**
+ * Manually releases any expired 30-minute order locks.
+ * Revalidates products and orders so storefront stock numbers update immediately.
+ */
+export async function reconcileExpiredLocks(): Promise<StatusResult> {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("release_expired_order_locks");
+
+  if (error) {
+    console.error("reconcileExpiredLocks:", error.message);
+    return { ok: false, error: "Failed to release expired locks." };
+  }
+
+  updateTag(PRODUCTS_TAG);
+  revalidatePath("/admin/orders");
+  return { ok: true };
+}

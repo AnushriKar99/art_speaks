@@ -126,6 +126,12 @@ export interface AdminOrder {
   extraCents: number;
   currency: string;
   stockDeductedAt: string | null;
+  stockLockedAt: string | null;
+  expiresAt: string | null;
+  stockRestoredAt: string | null;
+  adminNotes: string | null;
+  isExpired: boolean;
+  minutesRemaining: number;
   createdAt: string;
   lines: AdminOrderLine[];
 }
@@ -144,6 +150,10 @@ type OrderRow = {
   extra_cents: number;
   currency: string;
   stock_deducted_at: string | null;
+  stock_locked_at: string | null;
+  expires_at: string | null;
+  stock_restored_at: string | null;
+  admin_notes: string | null;
   created_at: string;
   order_items: {
     id: string;
@@ -179,43 +189,69 @@ type OrderRow = {
  */
 export async function getAdminOrders(): Promise<AdminOrder[]> {
   const supabase = await createClient();
+
+  // Reconcile any expired locks before loading orders so the admin view reflects reality
+  try {
+    await supabase.rpc("release_expired_order_locks");
+  } catch {
+    // If migration 0026 has not yet been applied, silently continue
+  }
+
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, subtotal_cents, shipping_cents, total_cents, extra_cents, currency, stock_deducted_at, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, prepared, products(stock_count))",
+      "id, order_number, channel, status, contact_phone, contact_email, shipping_address, subtotal_cents, shipping_cents, total_cents, extra_cents, currency, stock_deducted_at, stock_locked_at, expires_at, stock_restored_at, admin_notes, created_at, order_items(id, product_id, product_name, unit_price_cents, quantity, prepared, products(stock_count))",
     )
     .neq("channel", "offline")
     .order("created_at", { ascending: false });
 
   unwrap("getAdminOrders", { data, error });
 
-  return (data as unknown as OrderRow[]).map((o) => ({
-    id: o.id,
-    orderNumber: o.order_number,
-    channel: o.channel,
-    status: o.status,
-    // The name is stored inside the address blob — see place_whatsapp_order.
-    customerName: o.shipping_address?.name ?? null,
-    contactPhone: o.contact_phone,
-    contactEmail: o.contact_email,
-    address: o.shipping_address,
-    subtotalCents: o.subtotal_cents ?? 0,
-    shippingCents: o.shipping_cents ?? 0,
-    totalCents: o.total_cents,
-    extraCents: o.extra_cents,
-    currency: o.currency,
-    stockDeductedAt: o.stock_deducted_at,
-    createdAt: o.created_at,
-    lines: (o.order_items ?? []).map((l) => ({
-      id: l.id,
-      productId: l.product_id,
-      productName: l.product_name,
-      unitPriceCents: l.unit_price_cents,
-      quantity: l.quantity,
-      stockCount: l.products?.stock_count ?? null,
-      prepared: l.prepared,
-    })),
-  }));
+  const now = Date.now();
+
+  return (data as unknown as OrderRow[]).map((o) => {
+    const expiresTime = o.expires_at ? new Date(o.expires_at).getTime() : null;
+    const isPending = o.status === "pending";
+    const isExpired = isPending && expiresTime !== null && expiresTime <= now;
+    const minutesRemaining =
+      isPending && expiresTime !== null && expiresTime > now
+        ? Math.max(0, Math.ceil((expiresTime - now) / 60000))
+        : 0;
+
+    return {
+      id: o.id,
+      orderNumber: o.order_number,
+      channel: o.channel,
+      status: o.status,
+      // The name is stored inside the address blob — see place_whatsapp_order.
+      customerName: o.shipping_address?.name ?? null,
+      contactPhone: o.contact_phone,
+      contactEmail: o.contact_email,
+      address: o.shipping_address,
+      subtotalCents: o.subtotal_cents ?? 0,
+      shippingCents: o.shipping_cents ?? 0,
+      totalCents: o.total_cents,
+      extraCents: o.extra_cents,
+      currency: o.currency,
+      stockDeductedAt: o.stock_deducted_at,
+      stockLockedAt: o.stock_locked_at,
+      expiresAt: o.expires_at,
+      stockRestoredAt: o.stock_restored_at,
+      adminNotes: o.admin_notes,
+      isExpired,
+      minutesRemaining,
+      createdAt: o.created_at,
+      lines: (o.order_items ?? []).map((l) => ({
+        id: l.id,
+        productId: l.product_id,
+        productName: l.product_name,
+        unitPriceCents: l.unit_price_cents,
+        quantity: l.quantity,
+        stockCount: l.products?.stock_count ?? null,
+        prepared: l.prepared,
+      })),
+    };
+  });
 }
 
 /* ----------------------------------------------------------------- reports */

@@ -64,6 +64,14 @@ export const metadata: Metadata = {
       "Small items, big feelings — handmade phone charms, worry stones and bookmarks.",
     images: ["/brand/og-image.jpg"],
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icon.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

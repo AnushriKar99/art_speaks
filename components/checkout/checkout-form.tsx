@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/cart-store";
 import { createClient } from "@/lib/supabase/client";
 import { buildWhatsAppLink } from "@/lib/contact";
 import { formatPrice, SHIPPING_CENTS } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
+import { placeWhatsAppOrderAction } from "@/app/checkout/actions";
 
 const field =
   "w-full rounded-2xl border-2 border-outline-variant bg-white px-4 py-3 text-body-md text-on-surface focus:border-primary focus:outline-none";
@@ -25,9 +27,57 @@ type Placed = {
   /** Lines the browser showed that the order did not include. */
   dropped: string[];
   link: string;
+  expiresAt?: string | null;
 };
 
+function OrderCountdownBanner({ expiresAt }: { expiresAt: string }) {
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    const target = new Date(expiresAt).getTime();
+    function update() {
+      const remaining = Math.max(0, Math.floor((target - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+    }
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  if (secondsLeft === null) return null;
+
+  if (secondsLeft <= 0) {
+    return (
+      <div className="bg-stone-50 border border-stone-200 text-stone-700 rounded-2xl p-4 mb-4 text-left">
+        <div className="flex items-center gap-2 font-headline-md text-stone-800 mb-1">
+          <span className="text-lg">⏰</span>
+          <span>Reservation window ended</span>
+        </div>
+        <p className="text-[13px] text-stone-600 leading-relaxed">
+          The 30-minute lock has elapsed. If you haven&apos;t confirmed yet, reach out to us on WhatsApp to verify piece availability.
+        </p>
+      </div>
+    );
+  }
+
+  const mins = Math.floor(secondsLeft / 60);
+  const secs = secondsLeft % 60;
+
+  return (
+    <div className="bg-lemon-yellow/30 border border-amber-300/60 text-amber-950 rounded-2xl p-4 mb-4 text-left">
+      <div className="flex items-center gap-2 font-headline-md text-amber-900 mb-1">
+        <span className="text-lg animate-pulse">⏳</span>
+        <span>Items Reserved: {mins}:{secs.toString().padStart(2, "0")} remaining</span>
+      </div>
+      <p className="text-[13px] text-amber-800/90 leading-relaxed">
+        Your selected pieces are reserved in our inventory for 30 minutes while we connect on WhatsApp to confirm payment.
+      </p>
+    </div>
+  );
+}
+
 export function CheckoutForm() {
+  const router = useRouter();
   const { lines, clear } = useCart();
   const [items, setItems] = useState<Line[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -86,10 +136,9 @@ export function CheckoutForm() {
     const name = String(form.get("name") ?? "");
     const phone = String(form.get("phone") ?? "");
 
-    const supabase = createClient();
-    const { data, error: rpcError } = await supabase.rpc("place_whatsapp_order", {
-      // Only ids and quantities. The price is read from the database inside the
-      // function — there is no parameter through which one could be sent.
+    // Runs through Server Action which executes place_whatsapp_order on Supabase
+    // AND invalidates PRODUCTS_TAG so storefront cards reflect the reserved stock immediately.
+    const result = await placeWhatsAppOrderAction({
       items: lines.map((l) => ({
         product_id: l.productId,
         quantity: l.quantity,
@@ -108,20 +157,12 @@ export function CheckoutForm() {
 
     setPending(false);
 
-    if (rpcError) {
-      setError(rpcError.message);
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
 
-    const row = (
-      data as {
-        order_number: number;
-        subtotal_cents: number;
-        shipping_cents: number;
-        total_cents: number;
-        lines: PlacedLine[] | null;
-      }[]
-    )?.[0];
+    const row = result.data?.[0];
     if (!row) {
       setError("Something went wrong placing the order. Please try again.");
       return;
@@ -179,7 +220,9 @@ export function CheckoutForm() {
       lines: placedLines,
       dropped,
       link: buildWhatsAppLink(message),
+      expiresAt: row.expires_at ?? null,
     });
+    router.refresh();
   }
 
   // ---------- after placing ----------
@@ -194,6 +237,8 @@ export function CheckoutForm() {
           Send the message below and we&apos;ll confirm your order and share
           payment details.
         </p>
+
+        {placed.expiresAt && <OrderCountdownBanner expiresAt={placed.expiresAt} />}
 
         {/* What was recorded, itemised — so the list and the total agree. */}
         <ul className="text-left text-body-md border-y border-outline-variant/60 py-3 mb-4 space-y-1">
