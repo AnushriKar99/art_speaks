@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/cart-store";
 import { createClient } from "@/lib/supabase/client";
 import { buildWhatsAppLink } from "@/lib/contact";
 import { formatPrice, SHIPPING_CENTS } from "@/lib/types";
 import { Icon } from "@/components/ui/icon";
+import { placeWhatsAppOrderAction } from "@/app/checkout/actions";
 
 const field =
   "w-full rounded-2xl border-2 border-outline-variant bg-white px-4 py-3 text-body-md text-on-surface focus:border-primary focus:outline-none";
@@ -75,6 +77,7 @@ function OrderCountdownBanner({ expiresAt }: { expiresAt: string }) {
 }
 
 export function CheckoutForm() {
+  const router = useRouter();
   const { lines, clear } = useCart();
   const [items, setItems] = useState<Line[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -133,10 +136,9 @@ export function CheckoutForm() {
     const name = String(form.get("name") ?? "");
     const phone = String(form.get("phone") ?? "");
 
-    const supabase = createClient();
-    const { data, error: rpcError } = await supabase.rpc("place_whatsapp_order", {
-      // Only ids and quantities. The price is read from the database inside the
-      // function — there is no parameter through which one could be sent.
+    // Runs through Server Action which executes place_whatsapp_order on Supabase
+    // AND invalidates PRODUCTS_TAG so storefront cards reflect the reserved stock immediately.
+    const result = await placeWhatsAppOrderAction({
       items: lines.map((l) => ({
         product_id: l.productId,
         quantity: l.quantity,
@@ -155,21 +157,12 @@ export function CheckoutForm() {
 
     setPending(false);
 
-    if (rpcError) {
-      setError(rpcError.message);
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
 
-    const row = (
-      data as {
-        order_number: number;
-        subtotal_cents: number;
-        shipping_cents: number;
-        total_cents: number;
-        lines: PlacedLine[] | null;
-        expires_at?: string | null;
-      }[]
-    )?.[0];
+    const row = result.data?.[0];
     if (!row) {
       setError("Something went wrong placing the order. Please try again.");
       return;
@@ -229,6 +222,7 @@ export function CheckoutForm() {
       link: buildWhatsAppLink(message),
       expiresAt: row.expires_at ?? null,
     });
+    router.refresh();
   }
 
   // ---------- after placing ----------

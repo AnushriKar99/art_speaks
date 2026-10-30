@@ -299,9 +299,10 @@ async function OrderList({ active }: { active: FilterKey }) {
 
                 <ul className="border-t border-outline-variant/60 pt-3 space-y-1 mb-3">
                   {o.lines.map((l) => {
-                    // Stock can fall between an order arriving and being
-                    // confirmed — another order may have taken the last one.
+                    // Stock is already reserved for locked orders (stockLockedAt).
+                    // Only flag shortage if neither locked nor deducted, and quantity exceeds remaining stock.
                     const short =
+                      o.stockLockedAt === null &&
                       o.stockDeductedAt === null &&
                       l.stockCount !== null &&
                       l.quantity > l.stockCount;
